@@ -1,0 +1,200 @@
+//
+//  Config.swift
+//  SpendWise AI
+//
+//  ⚠️ IMPORTANT: This file contains API keys and sensitive configuration
+//  This file should be added to .gitignore and NEVER committed to git
+//
+//  Instructions:
+//  1. Copy this template to Config.swift
+//  2. Fill in your actual API keys and configuration
+//  3. Ensure Config.swift is in .gitignore
+//  4. NEVER commit Config.swift with real keys
+//
+
+import Foundation
+
+// MARK: - Azure OpenAI Configuration
+
+struct AzureOpenAIConfig {
+    /// Your Azure OpenAI resource endpoint
+    /// Example: "https://your-resource-name.openai.azure.com"
+    static let endpoint = "YOUR_AZURE_OPENAI_ENDPOINT"
+
+    /// Your Azure OpenAI API key
+    /// Get this from Azure Portal > Your OpenAI Resource > Keys and Endpoint
+    static let apiKey = "YOUR_AZURE_OPENAI_API_KEY"
+
+    /// Your GPT deployment name
+    /// This is the name you gave when deploying the model in Azure
+    static let deploymentName = "gpt-4"
+
+    /// API version
+    /// Use the latest stable version
+    static let apiVersion = "2024-02-15-preview"
+
+    /// Maximum tokens for responses
+    static let maxTokens = 500
+
+    /// Temperature for AI responses (0.0 - 1.0)
+    /// Lower = more focused, Higher = more creative
+    static let temperature: Double = 0.7
+}
+
+// MARK: - App Configuration
+
+struct AppConfig {
+    /// App display name
+    static let appName = "SpendWise AI"
+
+    /// Bundle identifier (must match Xcode project)
+    /// Example: "com.yourcompany.spendwiseai"
+    static let bundleIdentifier = "com.yourcompany.spendwiseai"
+
+    /// App version
+    static let version = "1.0.0"
+
+    /// Build number
+    static let buildNumber = "1"
+}
+
+// MARK: - Firebase Configuration
+
+struct FirebaseConfig {
+    /// Firebase project ID
+    /// Get this from Firebase Console > Project Settings
+    static let projectId = "YOUR_FIREBASE_PROJECT_ID"
+
+    /// Firebase Web API Key
+    /// Get this from Firebase Console > Project Settings > Web API Key
+    static let apiKey = "YOUR_FIREBASE_API_KEY"
+
+    /// Google Sign-In Client ID (iOS)
+    /// Get this from GoogleService-Info.plist or Firebase Console
+    static let googleSignInClientId = "YOUR_GOOGLE_SIGN_IN_CLIENT_ID"
+}
+
+// MARK: - Feature Flags
+
+struct FeatureFlags {
+    /// Enable voice input feature
+    static let voiceInputEnabled = true
+
+    /// Enable AI chat assistant
+    static let aiChatEnabled = true
+
+    /// Enable offline mode
+    static let offlineModeEnabled = true
+
+    /// Enable debug logging
+    static let debugLoggingEnabled = true
+
+    /// Maximum expenses to load per page
+    static let expensesPageSize = 50
+}
+
+// MARK: - UI Configuration
+
+struct UIConfig {
+    /// Currency symbol
+    static let currencySymbol = "$"
+
+    /// Date format
+    static let dateFormat = "MMM d, yyyy"
+
+    /// Time format
+    static let timeFormat = "h:mm a"
+
+    /// Maximum characters for expense description
+    static let maxDescriptionLength = 200
+
+    /// Auto-save delay (seconds)
+    static let autoSaveDelay: Double = 2.0
+}
+
+// MARK: - Default Categories
+
+struct DefaultCategories {
+    static let categories = [
+        Category(name: "Food & Dining", color: "#FF9F40", icon: "fork.knife", isDefault: true),
+        Category(name: "Transportation", color: "#4A90E2", icon: "car.fill", isDefault: true),
+        Category(name: "Groceries", color: "#4CAF50", icon: "cart.fill", isDefault: true),
+        Category(name: "Entertainment", color: "#9B59B6", icon: "tv.fill", isDefault: true),
+        Category(name: "Shopping", color: "#E91E63", icon: "bag.fill", isDefault: true),
+        Category(name: "Healthcare", color: "#F44336", icon: "cross.case.fill", isDefault: true),
+        Category(name: "Other", color: "#9E9E9E", icon: "ellipsis.circle.fill", isDefault: true)
+    ]
+}
+
+// MARK: - API Endpoints
+
+struct APIEndpoints {
+    /// Azure OpenAI completion endpoint
+    static var chatCompletion: String {
+        "\(AzureOpenAIConfig.endpoint)/openai/deployments/\(AzureOpenAIConfig.deploymentName)/chat/completions?api-version=\(AzureOpenAIConfig.apiVersion)"
+    }
+}
+
+// MARK: - Validation
+
+extension AzureOpenAIConfig {
+    /// Check if Azure OpenAI is properly configured
+    static var isConfigured: Bool {
+        !endpoint.contains("YOUR_") &&
+        !apiKey.contains("YOUR_") &&
+        !deploymentName.isEmpty
+    }
+}
+
+extension FirebaseConfig {
+    /// Check if Firebase is properly configured
+    static var isConfigured: Bool {
+        !projectId.contains("YOUR_") &&
+        !apiKey.contains("YOUR_") &&
+        !googleSignInClientId.contains("YOUR_")
+    }
+}
+
+// MARK: - Setup Instructions
+
+/*
+
+ 📋 SETUP INSTRUCTIONS
+
+ 1. AZURE OPENAI SETUP
+    - Go to https://portal.azure.com
+    - Create an Azure OpenAI resource
+    - Deploy a GPT-4 model
+    - Copy your endpoint and API key
+    - Update AzureOpenAIConfig above
+
+ 2. FIREBASE SETUP
+    - Go to https://console.firebase.google.com
+    - Create a new project (or use existing)
+    - Add an iOS app
+    - Download GoogleService-Info.plist
+    - Add GoogleService-Info.plist to your Xcode project
+    - Enable Firestore Database
+    - Enable Google Sign-In authentication
+    - Update FirebaseConfig above with your project details
+
+ 3. XCODE SETUP
+    - Copy this template to Config.swift
+    - Add Config.swift to your Xcode project
+    - Ensure Config.swift is in .gitignore
+    - Build and run!
+
+ 4. VERIFY CONFIGURATION
+    - Run the app
+    - Check that AzureOpenAIConfig.isConfigured returns true
+    - Check that FirebaseConfig.isConfigured returns true
+    - If false, review your configuration values
+
+ ⚠️ SECURITY REMINDER
+    - NEVER commit Config.swift with real API keys
+    - NEVER share your API keys publicly
+    - NEVER include API keys in screenshots
+    - Add Config.swift to .gitignore IMMEDIATELY
+    - Use different keys for development and production
+
+ */

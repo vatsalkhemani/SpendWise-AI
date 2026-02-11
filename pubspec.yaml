@@ -1,0 +1,46 @@
+name: spendwise_ai
+description: AI-powered expense tracking app with natural language input and smart insights
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI Components
+  cupertino_icons: ^1.0.6
+
+  # HTTP & API (for Azure OpenAI)
+  http: ^1.2.0
+
+  # Utilities
+  intl: ^0.18.1
+  uuid: ^4.3.3
+
+  # We'll add these later once basic app works:
+  # provider: ^6.1.1
+  # firebase_core, firebase_auth, cloud_firestore
+  # speech_to_text, fl_chart, etc.
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.7
+
+flutter:
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section
+  # assets:
+  #   - images/
+  #   - assets/
+
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
