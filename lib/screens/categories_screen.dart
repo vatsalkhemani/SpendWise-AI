@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/config.dart';
 import '../services/expense_service.dart';
 import '../models/category.dart';
+import '../utils/animations.dart';
 
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({super.key});
@@ -75,15 +76,20 @@ class CategoriesScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                ...categories.map((category) {
+                ...categories.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final category = entry.value;
                   final spent = spendingByCategory[category.name] ?? 0.0;
                   final count = transactionCounts[category.name] ?? 0;
-                  return _buildCategoryCard(
-                    category.name,
-                    category.colorHex,
-                    spent,
-                    count,
-                    context,
+                  return SlideUpAnimation(
+                    delay: Duration(milliseconds: 100 + (index * 50)),
+                    child: _buildCategoryCard(
+                      category.name,
+                      category.colorHex,
+                      spent,
+                      count,
+                      context,
+                    ),
                   );
                 }),
               ],

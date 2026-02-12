@@ -4,6 +4,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../services/azure_openai_service.dart';
 import '../services/expense_service.dart';
 import '../models/expense.dart';
+import '../utils/animations.dart';
 import 'package:uuid/uuid.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -106,39 +107,51 @@ class _ChatScreenState extends State<ChatScreen> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 80,
-              color: Colors.grey[700],
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Start Tracking Your Expenses',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
+        child: FadeInAnimation(
+          duration: const Duration(milliseconds: 600),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 80,
+                color: Colors.grey[700],
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Just type naturally - AI will handle the rest',
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey[400],
+              const SizedBox(height: 24),
+              const Text(
+                'Start Tracking Your Expenses',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            _buildExampleChip('spent \$25 on lunch'),
-            const SizedBox(height: 8),
-            _buildExampleChip('\$67.32 groceries at Walmart'),
-            const SizedBox(height: 8),
-            _buildExampleChip('coffee with Mike \$18.75'),
-          ],
+              const SizedBox(height: 12),
+              Text(
+                'Just type naturally - AI will handle the rest',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey[400],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              SlideUpAnimation(
+                delay: const Duration(milliseconds: 300),
+                child: _buildExampleChip('spent \$25 on lunch'),
+              ),
+              const SizedBox(height: 8),
+              SlideUpAnimation(
+                delay: const Duration(milliseconds: 400),
+                child: _buildExampleChip('\$67.32 groceries at Walmart'),
+              ),
+              const SizedBox(height: 8),
+              SlideUpAnimation(
+                delay: const Duration(milliseconds: 500),
+                child: _buildExampleChip('coffee with Mike \$18.75'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -169,7 +182,10 @@ class _ChatScreenState extends State<ChatScreen> {
       padding: const EdgeInsets.all(16),
       itemCount: _messages.length,
       itemBuilder: (context, index) {
-        return _buildMessageBubble(_messages[index]);
+        return SlideUpAnimation(
+          delay: Duration(milliseconds: 50 * index),
+          child: _buildMessageBubble(_messages[index]),
+        );
       },
     );
   }
@@ -293,7 +309,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
-      final parsed = await _aiService.parseExpense(text);
+      // Get available categories for AI to use
+      final categoryNames = _expenseService.categories.map((c) => c.name).toList();
+      final parsed = await _aiService.parseExpense(text, availableCategories: categoryNames);
 
       final expense = Expense(
         id: const Uuid().v4(),

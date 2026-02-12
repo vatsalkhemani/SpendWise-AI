@@ -3,10 +3,10 @@ import 'package:http/http.dart' as http;
 import '../config/config.dart';
 
 class AzureOpenAIService {
-  /// Parse natural language expense input
-  Future<Map<String, dynamic>> parseExpense(String input) async {
+  /// Parse natural language expense input with dynamic categories
+  Future<Map<String, dynamic>> parseExpense(String input, {List<String>? availableCategories}) async {
     try {
-      final prompt = _buildExpenseParsePrompt(input);
+      final prompt = _buildExpenseParsePrompt(input, availableCategories);
       final response = await _sendRequest(prompt);
 
       // Parse JSON response from AI
@@ -91,8 +91,20 @@ class AzureOpenAIService {
     }
   }
 
-  /// Build expense parsing prompt
-  String _buildExpenseParsePrompt(String input) {
+  /// Build expense parsing prompt with dynamic categories
+  String _buildExpenseParsePrompt(String input, List<String>? availableCategories) {
+    final categories = availableCategories ?? [
+      'Food & Dining',
+      'Transportation',
+      'Groceries',
+      'Entertainment',
+      'Shopping',
+      'Healthcare',
+      'Other'
+    ];
+
+    final categoryList = categories.map((cat) => '- $cat').join('\n');
+
     return '''
 You are an expense parser. Extract structured data from natural language input.
 
@@ -108,17 +120,11 @@ Extract and return ONLY valid JSON in this exact format:
 }
 
 Categories (choose ONLY from this list):
-- Food & Dining
-- Transportation
-- Groceries
-- Entertainment
-- Shopping
-- Healthcare
-- Other
+$categoryList
 
 Rules:
 - Amount must be a positive number
-- Category must be from the list above
+- Category must be from the list above (match exactly)
 - Description should be brief (< 50 chars)
 - Person is optional (null if not mentioned)
 - Date is optional (null for today)

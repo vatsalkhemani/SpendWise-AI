@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/expense_service.dart';
 import '../models/expense.dart';
+import '../utils/animations.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -30,24 +31,30 @@ class DashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Summary cards
+                // Summary cards with animation
                 Row(
                   children: [
                     Expanded(
-                      child: _buildSummaryCard(
-                        'Monthly Total',
-                        '\$${monthlyTotal.toStringAsFixed(2)}',
-                        Icons.trending_up,
-                        context,
+                      child: SlideUpAnimation(
+                        delay: const Duration(milliseconds: 0),
+                        child: _buildSummaryCard(
+                          'Monthly Total',
+                          '\$${monthlyTotal.toStringAsFixed(2)}',
+                          Icons.trending_up,
+                          context,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: _buildSummaryCard(
-                        'Transactions',
-                        '$transactionCount',
-                        Icons.receipt_long,
-                        context,
+                      child: SlideUpAnimation(
+                        delay: const Duration(milliseconds: 100),
+                        child: _buildSummaryCard(
+                          'Transactions',
+                          '$transactionCount',
+                          Icons.receipt_long,
+                          context,
+                        ),
                       ),
                     ),
                   ],
@@ -56,22 +63,30 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(width: 24),
 
                 // Pie Chart for Spending by Category
-                const Text(
-                  'Spending by Category',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                SlideUpAnimation(
+                  delay: const Duration(milliseconds: 200),
+                  child: const Text(
+                    'Spending by Category',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 if (spendingByCategory.isEmpty)
-                  _buildEmptyState('No expenses yet', context)
+                  SlideUpAnimation(
+                    delay: const Duration(milliseconds: 300),
+                    child: _buildEmptyState('No expenses yet', context),
+                  )
                 else
-                  Container(
-                    height: 300,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
+                  SlideUpAnimation(
+                    delay: const Duration(milliseconds: 300),
+                    child: Container(
+                      height: 300,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
                       children: [
                         // Pie Chart
                         Expanded(
@@ -97,25 +112,37 @@ class DashboardScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                ),
 
                 const SizedBox(height: 24),
 
                 // Category Breakdown with bars
-                const Text(
-                  'Category Breakdown',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                SlideUpAnimation(
+                  delay: const Duration(milliseconds: 400),
+                  child: const Text(
+                    'Category Breakdown',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 if (spendingByCategory.isEmpty)
-                  _buildEmptyState('Add expenses to see breakdown', context)
+                  SlideUpAnimation(
+                    delay: const Duration(milliseconds: 500),
+                    child: _buildEmptyState('Add expenses to see breakdown', context),
+                  )
                 else
-                  ...spendingByCategory.entries.map((entry) {
+                  ...spendingByCategory.entries.toList().asMap().entries.map((mapEntry) {
+                    final index = mapEntry.key;
+                    final entry = mapEntry.value;
                     final percentage = (entry.value / monthlyTotal * 100);
-                    return _buildCategoryBar(
-                      entry.key,
-                      entry.value,
-                      percentage,
-                      context,
+                    return SlideUpAnimation(
+                      delay: Duration(milliseconds: 500 + (index * 50)),
+                      child: _buildCategoryBar(
+                        entry.key,
+                        entry.value,
+                        percentage,
+                        context,
+                      ),
                     );
                   }),
 
