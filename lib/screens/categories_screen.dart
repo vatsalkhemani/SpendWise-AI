@@ -92,11 +92,10 @@ class CategoriesScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Add new category
-        },
+        onPressed: () => _showAddCategoryDialog(context),
         backgroundColor: const Color(0xFFFFD60A),
         child: const Icon(Icons.add, color: Colors.black),
+        tooltip: 'Add Category',
       ),
     );
   }
@@ -169,11 +168,153 @@ class CategoriesScreen extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () {},
+            onPressed: () => _showEditCategoryDialog(context, name, colorHex),
+            tooltip: 'Edit',
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            onPressed: () {},
+            onPressed: () => _showDeleteCategoryDialog(context, name),
+            tooltip: 'Delete',
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Add Category Dialog
+  void _showAddCategoryDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    final expenseService = ExpenseService();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Category'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(
+            labelText: 'Category Name',
+            hintText: 'e.g., Travel, Utilities',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final name = nameController.text.trim();
+              if (name.isEmpty) return;
+
+              final newCategory = Category(
+                id: name,
+                name: name,
+                colorHex: '#${(0xFF000000 + (name.hashCode % 0xFFFFFF)).toRadixString(16).substring(2)}',
+                iconName: 'category',
+                isDefault: false,
+              );
+
+              await expenseService.addCategory(newCategory);
+              if (context.mounted) Navigator.pop(context);
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Added category: $name')),
+                );
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Edit Category Dialog
+  void _showEditCategoryDialog(BuildContext context, String oldName, String colorHex) {
+    final nameController = TextEditingController(text: oldName);
+    final expenseService = ExpenseService();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Category'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(
+            labelText: 'Category Name',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newName = nameController.text.trim();
+              if (newName.isEmpty || newName == oldName) {
+                Navigator.pop(context);
+                return;
+              }
+
+              // Create updated category
+              final updatedCategory = Category(
+                id: oldName, // Keep same ID
+                name: newName,
+                colorHex: colorHex,
+                iconName: 'category',
+                isDefault: false,
+              );
+
+              await expenseService.updateCategory(updatedCategory);
+              if (context.mounted) Navigator.pop(context);
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Updated to: $newName')),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Delete Category Dialog
+  void _showDeleteCategoryDialog(BuildContext context, String name) {
+    final expenseService = ExpenseService();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Category'),
+        content: Text('Are you sure you want to delete "$name"?\n\nExpenses in this category will not be deleted.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await expenseService.deleteCategory(name);
+              if (context.mounted) Navigator.pop(context);
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Deleted: $name')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
           ),
         ],
       ),

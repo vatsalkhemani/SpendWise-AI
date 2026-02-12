@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../services/expense_service.dart';
 import '../models/expense.dart';
 
@@ -13,7 +12,6 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
-        centerTitle: true,
       ),
       body: StreamBuilder<List<Expense>>(
         stream: expenseService.expensesStream,
@@ -23,7 +21,6 @@ class DashboardScreen extends StatelessWidget {
             startDate: DateTime(DateTime.now().year, DateTime.now().month, 1),
           );
           final activeCategories = spendingByCategory.length;
-          final transactionCount = expenseService.getMonthlyTransactionCount();
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -44,70 +41,51 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildSummaryCard(
-                        'Transactions',
-                        '$transactionCount',
-                        Icons.receipt_long,
+                        'Categories',
+                        '$activeCategories',
+                        Icons.pie_chart,
                         context,
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(width: 24),
+                const SizedBox(height: 24),
 
-                // Pie Chart for Spending by Category
+                // Spending by Category
                 const Text(
                   'Spending by Category',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 if (spendingByCategory.isEmpty)
-                  _buildEmptyState('No expenses yet', context)
-                else
                   Container(
-                    height: 300,
-                    padding: const EdgeInsets.all(16),
+                    height: 200,
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Row(
-                      children: [
-                        // Pie Chart
-                        Expanded(
-                          flex: 2,
-                          child: PieChart(
-                            PieChartData(
-                              sections: _buildPieChartSections(spendingByCategory),
-                              sectionsSpace: 2,
-                              centerSpaceRadius: 50,
-                              borderData: FlBorderData(show: false),
-                            ),
+                    child: const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.pie_chart_outline, size: 48, color: Colors.grey),
+                          SizedBox(height: 12),
+                          Text(
+                            'No expenses yet',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey),
                           ),
-                        ),
-                        // Legend
-                        Expanded(
-                          flex: 1,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: _buildLegend(spendingByCategory),
+                          SizedBox(height: 4),
+                          Text(
+                            'Add expenses in the Chat tab',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-
-                const SizedBox(height: 24),
-
-                // Category Breakdown with bars
-                const Text(
-                  'Category Breakdown',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                if (spendingByCategory.isEmpty)
-                  _buildEmptyState('Add expenses to see breakdown', context)
+                  )
                 else
                   ...spendingByCategory.entries.map((entry) {
                     final percentage = (entry.value / monthlyTotal * 100);
@@ -128,7 +106,19 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 if (expenseService.expenses.isEmpty)
-                  _buildEmptyState('No recent expenses', context)
+                  Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'No recent expenses',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  )
                 else
                   ...expenseService.getRecentExpenses(limit: 5).map((expense) {
                     return _buildExpenseTile(expense, context);
@@ -139,71 +129,6 @@ class DashboardScreen extends StatelessWidget {
         },
       ),
     );
-  }
-
-  List<PieChartSectionData> _buildPieChartSections(Map<String, double> spendingByCategory) {
-    final total = spendingByCategory.values.reduce((a, b) => a + b);
-    final colors = _getCategoryColors();
-
-    return spendingByCategory.entries.map((entry) {
-      final percentage = (entry.value / total * 100);
-      final color = colors[entry.key] ?? Colors.grey;
-
-      return PieChartSectionData(
-        value: entry.value,
-        title: '${percentage.toStringAsFixed(0)}%',
-        radius: 80,
-        titleStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        color: color,
-      );
-    }).toList();
-  }
-
-  List<Widget> _buildLegend(Map<String, double> spendingByCategory) {
-    final colors = _getCategoryColors();
-
-    return spendingByCategory.entries.map((entry) {
-      final color = colors[entry.key] ?? Colors.grey;
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Row(
-          children: [
-            Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                entry.key,
-                style: const TextStyle(fontSize: 12),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      );
-    }).toList();
-  }
-
-  Map<String, Color> _getCategoryColors() {
-    return {
-      'Food & Dining': const Color(0xFFFF9F40),
-      'Transportation': const Color(0xFF4A90E2),
-      'Groceries': const Color(0xFF4CAF50),
-      'Entertainment': const Color(0xFF9B59B6),
-      'Shopping': const Color(0xFFE91E63),
-      'Healthcare': const Color(0xFFF44336),
-      'Other': const Color(0xFF9E9E9E),
-    };
   }
 
   Widget _buildSummaryCard(
@@ -221,7 +146,7 @@ class DashboardScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: const Color(0xFFFFD60A), size: 28),
+          Icon(icon, color: const Color(0xFFFFD60A)),
           const SizedBox(height: 12),
           Text(
             title,
@@ -329,29 +254,6 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String message, BuildContext context) {
-    return Container(
-      height: 150,
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.pie_chart_outline, size: 48, color: Colors.grey[600]),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              style: const TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
       ),
     );
   }

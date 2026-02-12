@@ -1,12 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 
-class Category {
+part 'category.g.dart';
+
+@HiveType(typeId: 1)
+class Category extends HiveObject {
+  @HiveField(0)
   final String id;
+
+  @HiveField(1)
   final String name;
+
+  @HiveField(2)
   final String colorHex;
+
+  @HiveField(3)
   final String iconName;
+
+  @HiveField(4)
   final bool isDefault;
+
+  @HiveField(5)
   final double totalSpent;
+
+  @HiveField(6)
   final int transactionCount;
 
   Category({

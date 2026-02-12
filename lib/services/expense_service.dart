@@ -1,92 +1,94 @@
 import 'dart:async';
+import 'package:hive/hive.dart';
 import '../models/expense.dart';
 import '../models/category.dart';
 import '../config/config.dart';
 
 /// Central expense management service
-/// Manages expenses in-memory and provides streams for reactive updates
+/// Manages expenses with Hive persistence and provides streams for reactive updates
 class ExpenseService {
   // Singleton instance
   static final ExpenseService _instance = ExpenseService._internal();
   factory ExpenseService() => _instance;
   ExpenseService._internal();
 
-  // In-memory storage (will be replaced with Hive/Firestore later)
-  final List<Expense> _expenses = [];
-  final List<Category> _categories = [];
+  // Hive boxes
+  late Box<Expense> _expensesBox;
+  late Box<Category> _categoriesBox;
 
   // Stream controllers for reactive updates
   final _expensesController = StreamController<List<Expense>>.broadcast();
   final _categoriesController = StreamController<List<Category>>.broadcast();
 
   // Getters
-  List<Expense> get expenses => List.unmodifiable(_expenses);
-  List<Category> get categories => List.unmodifiable(_categories);
+  List<Expense> get expenses => _expensesBox.values.toList()
+    ..sort((a, b) => b.date.compareTo(a.date));
+
+  List<Category> get categories => _categoriesBox.values.toList();
 
   Stream<List<Expense>> get expensesStream => _expensesController.stream;
   Stream<List<Category>> get categoriesStream => _categoriesController.stream;
 
   // Initialize with default categories
-  void init() {
-    if (_categories.isEmpty) {
-      _categories.addAll(
-        DefaultCategories.categories.map((cat) {
-          return Category(
-            id: cat['name'] as String,
-            name: cat['name'] as String,
-            colorHex: cat['color'] as String,
-            iconName: cat['icon'] as String,
-            isDefault: true,
-          );
-        }),
-      );
-      _categoriesController.add(_categories);
+  Future<void> init() async {
+    // Get boxes
+    _expensesBox = Hive.box<Expense>('expenses');
+    _categoriesBox = Hive.box<Category>('categories');
+
+    // Initialize with default categories if empty
+    if (_categoriesBox.isEmpty) {
+      for (var cat in DefaultCategories.categories) {
+        final category = Category(
+          id: cat['name'] as String,
+          name: cat['name'] as String,
+          colorHex: cat['color'] as String,
+          iconName: cat['icon'] as String,
+          isDefault: true,
+        );
+        await _categoriesBox.put(category.id, category);
+      }
     }
+
+    // Send initial data to streams
+    _expensesController.add(expenses);
+    _categoriesController.add(categories);
   }
 
   // Expense operations
-  void addExpense(Expense expense) {
-    _expenses.add(expense);
-    _expenses.sort((a, b) => b.date.compareTo(a.date)); // Most recent first
-    _expensesController.add(_expenses);
+  Future<void> addExpense(Expense expense) async {
+    await _expensesBox.put(expense.id, expense);
+    _expensesController.add(expenses);
   }
 
-  void updateExpense(Expense expense) {
-    final index = _expenses.indexWhere((e) => e.id == expense.id);
-    if (index != -1) {
-      _expenses[index] = expense;
-      _expenses.sort((a, b) => b.date.compareTo(a.date));
-      _expensesController.add(_expenses);
-    }
+  Future<void> updateExpense(Expense expense) async {
+    await _expensesBox.put(expense.id, expense);
+    _expensesController.add(expenses);
   }
 
-  void deleteExpense(String expenseId) {
-    _expenses.removeWhere((e) => e.id == expenseId);
-    _expensesController.add(_expenses);
+  Future<void> deleteExpense(String expenseId) async {
+    await _expensesBox.delete(expenseId);
+    _expensesController.add(expenses);
   }
 
   // Category operations
-  void addCategory(Category category) {
-    _categories.add(category);
-    _categoriesController.add(_categories);
+  Future<void> addCategory(Category category) async {
+    await _categoriesBox.put(category.id, category);
+    _categoriesController.add(categories);
   }
 
-  void updateCategory(Category category) {
-    final index = _categories.indexWhere((c) => c.id == category.id);
-    if (index != -1) {
-      _categories[index] = category;
-      _categoriesController.add(_categories);
-    }
+  Future<void> updateCategory(Category category) async {
+    await _categoriesBox.put(category.id, category);
+    _categoriesController.add(categories);
   }
 
-  void deleteCategory(String categoryId) {
-    _categories.removeWhere((c) => c.id == categoryId);
-    _categoriesController.add(_categories);
+  Future<void> deleteCategory(String categoryId) async {
+    await _categoriesBox.delete(categoryId);
+    _categoriesController.add(categories);
   }
 
   // Analytics
   double getTotalSpent({DateTime? startDate, DateTime? endDate}) {
-    var filtered = _expenses;
+    var filtered = expenses;
 
     if (startDate != null) {
       filtered = filtered.where((e) => e.date.isAfter(startDate)).toList();
@@ -106,7 +108,7 @@ class ExpenseService {
   }
 
   int getTransactionCount({DateTime? startDate, DateTime? endDate}) {
-    var filtered = _expenses;
+    var filtered = expenses;
 
     if (startDate != null) {
       filtered = filtered.where((e) => e.date.isAfter(startDate)).toList();
@@ -126,7 +128,7 @@ class ExpenseService {
   }
 
   Map<String, double> getSpendingByCategory({DateTime? startDate, DateTime? endDate}) {
-    var filtered = _expenses;
+    var filtered = expenses;
 
     if (startDate != null) {
       filtered = filtered.where((e) => e.date.isAfter(startDate)).toList();
@@ -145,31 +147,32 @@ class ExpenseService {
 
   Map<String, int> getCategoryTransactionCounts() {
     final Map<String, int> counts = {};
-    for (var expense in _expenses) {
+    for (var expense in expenses) {
       counts[expense.category] = (counts[expense.category] ?? 0) + 1;
     }
     return counts;
   }
 
   List<Expense> getExpensesByCategory(String category) {
-    return _expenses.where((e) => e.category == category).toList();
+    return expenses.where((e) => e.category == category).toList();
   }
 
   List<Expense> getRecentExpenses({int limit = 10}) {
-    return _expenses.take(limit).toList();
+    return expenses.take(limit).toList();
   }
 
   // Get data for AI insights
   Map<String, dynamic> getExpenseDataForAI() {
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
+    final allExpenses = expenses;
 
     return {
       'totalSpent': getTotalSpent(),
       'monthlyTotal': getMonthlyTotal(),
-      'transactionCount': _expenses.length,
+      'transactionCount': allExpenses.length,
       'monthlyTransactionCount': getMonthlyTransactionCount(),
-      'averageTransaction': _expenses.isEmpty ? 0.0 : getTotalSpent() / _expenses.length,
+      'averageTransaction': allExpenses.isEmpty ? 0.0 : getTotalSpent() / allExpenses.length,
       'spendingByCategory': getSpendingByCategory(startDate: startOfMonth),
       'categoryCounts': getCategoryTransactionCounts(),
       'recentExpenses': getRecentExpenses(limit: 5).map((e) => {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../services/azure_openai_service.dart';
 import '../services/expense_service.dart';
 import '../models/expense.dart';
@@ -18,7 +19,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<ChatMessage> _messages = [];
   final AzureOpenAIService _aiService = AzureOpenAIService();
   final ExpenseService _expenseService = ExpenseService();
+  final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isProcessing = false;
+  bool _isListening = false;
 
   @override
   void dispose() {
@@ -217,10 +220,10 @@ class _ChatScreenState extends State<ChatScreen> {
             // Voice button
             IconButton(
               onPressed: _startVoiceInput,
-              icon: const Icon(Icons.mic_none),
+              icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
               iconSize: 28,
-              color: Colors.white,
-              tooltip: 'Voice input',
+              color: _isListening ? const Color(0xFFFFD60A) : Colors.white,
+              tooltip: _isListening ? 'Stop listening' : 'Voice input',
             ),
             const SizedBox(width: 8),
             // Text field
@@ -349,13 +352,55 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  void _startVoiceInput() {
+  Future<void> _startVoiceInput() async {
+    if (_isListening) {
+      // Stop listening
+      await _speech.stop();
+      setState(() => _isListening = false);
+      return;
+    }
+
+    // Check if speech recognition is available
+    bool available = await _speech.initialize(
+      onError: (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Speech recognition error: ${error.errorMsg}')),
+        );
+      },
+      onStatus: (status) {
+        if (status == 'done') {
+          setState(() => _isListening = false);
+        }
+      },
+    );
+
+    if (!available) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Speech recognition not available on this device'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
     HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Voice input coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
+
+    setState(() => _isListening = true);
+
+    _speech.listen(
+      onResult: (result) {
+        setState(() {
+          _controller.text = result.recognizedWords;
+        });
+      },
+      listenFor: const Duration(seconds: 30),
+      pauseFor: const Duration(seconds: 3),
+      partialResults: true,
+      cancelOnError: true,
+      listenMode: stt.ListenMode.confirmation,
     );
   }
 }

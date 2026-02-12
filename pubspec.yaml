@@ -20,10 +20,19 @@ dependencies:
   intl: ^0.18.1
   uuid: ^4.3.3
 
-  # We'll add these later once basic app works:
+  # Local Storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Charts (Phase 1)
+  fl_chart: ^0.66.0
+
+  # Voice Input (Phase 1)
+  speech_to_text: ^6.6.0
+
+  # We'll add these later (Phase 2):
   # provider: ^6.1.1
   # firebase_core, firebase_auth, cloud_firestore
-  # speech_to_text, fl_chart, etc.
 
 dev_dependencies:
   flutter_test:

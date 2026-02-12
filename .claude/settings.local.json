@@ -4,7 +4,9 @@
       "Bash(git config:*)",
       "Bash(where:*)",
       "Bash(flutter run:*)",
-      "Bash(nc:*)"
+      "Bash(nc:*)",
+      "Bash(flutter pub get:*)",
+      "Bash(flutter pub run:*)"
     ]
   }
 }

@@ -1,12 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'screens/chat_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/categories_screen.dart';
 import 'screens/ai_chat_screen.dart';
 import 'services/expense_service.dart';
+import 'models/expense.dart';
+import 'models/category.dart';
 
-void main() {
-  ExpenseService().init();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Hive
+  await Hive.initFlutter();
+
+  // Register adapters
+  Hive.registerAdapter(ExpenseAdapter());
+  Hive.registerAdapter(CategoryAdapter());
+
+  // Open boxes
+  await Hive.openBox<Expense>('expenses');
+  await Hive.openBox<Category>('categories');
+
+  // Initialize expense service
+  await ExpenseService().init();
+
   runApp(const SpendWiseApp());
 }
 
