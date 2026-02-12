@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git config:*)",
       "Bash(where:*)",
-      "Bash(flutter run:*)"
+      "Bash(flutter run:*)",
+      "Bash(nc:*)"
     ]
   }
 }

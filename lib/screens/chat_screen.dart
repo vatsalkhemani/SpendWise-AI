@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/azure_openai_service.dart';
 import '../services/expense_service.dart';
 import '../models/expense.dart';
@@ -13,10 +14,18 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   final AzureOpenAIService _aiService = AzureOpenAIService();
   final ExpenseService _expenseService = ExpenseService();
   bool _isProcessing = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,160 +33,243 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: const Text(
           'AI EXPENSE TRACKER',
-          style: TextStyle(fontSize: 16, letterSpacing: 1),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
         ),
         centerTitle: true,
       ),
       body: Column(
         children: [
-          // Monthly total
-          Container(
-            padding: const EdgeInsets.all(20),
-            child: StreamBuilder<List<Expense>>(
-              stream: _expenseService.expensesStream,
-              builder: (context, snapshot) {
-                final monthlyTotal = _expenseService.getMonthlyTotal();
-                final transactionCount = _expenseService.getMonthlyTransactionCount();
-
-                return Column(
-                  children: [
-                    const Text(
-                      'This Month\'s Total',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '\$${monthlyTotal.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$transactionCount ${transactionCount == 1 ? 'transaction' : 'transactions'}',
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-
+          _buildMonthlyTotal(),
           const Divider(height: 1),
-
-          // Messages list
           Expanded(
             child: _messages.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 64,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'AI Assistant ready. Input expenses naturally:',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          '"spent \$25 on lunch at McDonald\'s with Sarah"',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 13,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      return _buildMessageBubble(_messages[index]);
-                    },
-                  ),
+                ? _buildEmptyState()
+                : _buildMessageList(),
           ),
-
-          // Input area
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              border: Border(
-                top: BorderSide(color: Colors.grey[800]!),
-              ),
-            ),
-            child: Row(
-              children: [
-                // Voice button
-                IconButton(
-                  onPressed: _startVoiceInput,
-                  icon: const Icon(Icons.mic_none),
-                  tooltip: 'Voice input',
-                ),
-
-                // Text field
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter expense details...',
-                      border: InputBorder.none,
-                    ),
-                    onSubmitted: (text) => _submitExpense(),
-                  ),
-                ),
-
-                // Send button
-                IconButton(
-                  onPressed: _isProcessing ? null : _submitExpense,
-                  icon: _isProcessing
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.send),
-                ),
-              ],
-            ),
-          ),
+          _buildInputArea(),
         ],
       ),
     );
   }
 
+  Widget _buildMonthlyTotal() {
+    return StreamBuilder<List<Expense>>(
+      stream: _expenseService.expensesStream,
+      builder: (context, snapshot) {
+        final monthlyTotal = _expenseService.getMonthlyTotal();
+        final transactionCount = _expenseService.getMonthlyTransactionCount();
+
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            children: [
+              const Text(
+                'This Month\'s Total',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '\$${monthlyTotal.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFFFD60A),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$transactionCount ${transactionCount == 1 ? 'transaction' : 'transactions'}',
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.chat_bubble_outline,
+              size: 80,
+              color: Colors.grey[700],
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Start Tracking Your Expenses',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Just type naturally - AI will handle the rest',
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey[400],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            _buildExampleChip('spent \$25 on lunch'),
+            const SizedBox(height: 8),
+            _buildExampleChip('\$67.32 groceries at Walmart'),
+            const SizedBox(height: 8),
+            _buildExampleChip('coffee with Mike \$18.75'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExampleChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2C2C2E),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey[800]!),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.grey[500],
+          fontSize: 14,
+          fontStyle: FontStyle.italic,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessageList() {
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(16),
+      itemCount: _messages.length,
+      itemBuilder: (context, index) {
+        return _buildMessageBubble(_messages[index]);
+      },
+    );
+  }
+
   Widget _buildMessageBubble(ChatMessage message) {
+    final isUser = message.isFromUser;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Align(
-        alignment: message.isFromUser ? Alignment.centerRight : Alignment.centerLeft,
+        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
           constraints: BoxConstraints(
             maxWidth: MediaQuery.of(context).size.width * 0.75,
           ),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: message.isFromUser
+            color: isUser
                 ? const Color(0xFFFFD60A)
-                : Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(12),
+                : const Color(0xFF2C2C2E),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
             message.content,
             style: TextStyle(
-              color: message.isFromUser ? Colors.black : Colors.white,
+              color: isUser ? Colors.black : Colors.white,
+              fontSize: 15,
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputArea() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2C2C2E),
+        border: Border(
+          top: BorderSide(color: Colors.grey[900]!),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            // Voice button
+            IconButton(
+              onPressed: _startVoiceInput,
+              icon: const Icon(Icons.mic_none),
+              iconSize: 28,
+              color: Colors.white,
+              tooltip: 'Voice input',
+            ),
+            const SizedBox(width: 8),
+            // Text field
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C1E),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: TextField(
+                  controller: _controller,
+                  style: const TextStyle(fontSize: 16),
+                  decoration: const InputDecoration(
+                    hintText: 'Type your expense...',
+                    hintStyle: TextStyle(color: Colors.grey),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                  ),
+                  onSubmitted: (text) => _submitExpense(),
+                  textInputAction: TextInputAction.send,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Send button
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFD60A),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                onPressed: _isProcessing ? null : _submitExpense,
+                icon: _isProcessing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                        ),
+                      )
+                    : const Icon(Icons.send, color: Colors.black),
+                iconSize: 22,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -187,21 +279,22 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
+    HapticFeedback.mediumImpact();
+
     setState(() {
       _messages.add(ChatMessage(content: text, isFromUser: true));
       _isProcessing = true;
     });
 
     _controller.clear();
+    _scrollToBottom();
 
     try {
-      // Parse expense with AI
       final parsed = await _aiService.parseExpense(text);
 
-      // Create expense
       final expense = Expense(
         id: const Uuid().v4(),
-        userId: 'user123', // TODO: Get from auth
+        userId: 'user123',
         amount: (parsed['amount'] as num).toDouble(),
         category: parsed['category'] as String,
         description: parsed['description'] as String,
@@ -212,43 +305,58 @@ class _ChatScreenState extends State<ChatScreen> {
         createdAt: DateTime.now(),
       );
 
-      // Save to expense service
       _expenseService.addExpense(expense);
 
-      // Show confirmation
+      HapticFeedback.lightImpact();
+
       setState(() {
         _messages.add(
           ChatMessage(
-            content: '✓ Added: ${expense.formattedAmount} - ${expense.description} (${expense.category})',
+            content: '✓ Added ${expense.formattedAmount} - ${expense.description}\nCategory: ${expense.category}',
             isFromUser: false,
           ),
         );
         _isProcessing = false;
       });
+
+      _scrollToBottom();
     } catch (e) {
+      HapticFeedback.heavyImpact();
+
       setState(() {
         _messages.add(
           ChatMessage(
-            content: 'Sorry, I couldn\'t process that. Please try again.',
+            content: 'Sorry, I couldn\'t process that. Try: "spent \$25 on lunch"',
             isFromUser: false,
           ),
         );
         _isProcessing = false;
       });
+
+      _scrollToBottom();
     }
   }
 
-  void _startVoiceInput() {
-    // TODO: Implement voice input with speech_to_text
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Voice input coming soon!')),
-    );
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  void _startVoiceInput() {
+    HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Voice input coming soon!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 }
 

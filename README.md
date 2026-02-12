@@ -1,322 +1,326 @@
 # SpendWise AI 💰🤖
 
-An AI-powered expense tracking iOS app that makes managing your finances effortless. Track expenses through natural language (text or voice), get automatic categorization, visualize spending patterns, and chat with your AI financial buddy.
+**An AI-powered expense tracking app built with Flutter that makes managing your finances effortless.**
 
-## Overview
+Track expenses through natural language (text or voice), get automatic AI categorization, visualize spending patterns, and chat with your AI financial assistant.
 
-SpendWise AI is your intelligent expense tracking companion. Simply tell it what you spent - like "spent $25 on lunch at McDonald's with Sarah" - and it automatically logs, categorizes, and analyzes your expenses. No forms, no hassle, just natural conversation.
+[![Flutter](https://img.shields.io/badge/Flutter-3.38.9-blue)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.10.8-blue)](https://dart.dev)
+[![Azure OpenAI](https://img.shields.io/badge/Azure%20OpenAI-GPT--4o-green)](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
 
-### Key Features
+---
 
-- **🎙️ Natural Language Input**: Type or speak your expenses naturally
-- **🤖 AI Auto-Categorization**: Azure OpenAI automatically categorizes expenses
-- **📊 Visual Dashboard**: Beautiful charts showing spending patterns and trends
-- **💬 AI Chat Assistant**: Ask questions about your spending, get insights and recommendations
-- **🏷️ Smart Categories**: Manage and customize expense categories with AI suggestions
-- **🔄 Cloud Sync**: Google Sign-In with Firebase for seamless data sync across devices
-- **📱 Offline Support**: Works offline, syncs when connected
+## 🎯 Overview
 
-## Tech Stack
+SpendWise AI is your intelligent expense tracking companion. Simply tell it what you spent - like "spent $25 on lunch at McDonald's" - and it automatically logs, categorizes, and analyzes your expenses using Azure OpenAI. No forms, no hassle, just natural conversation.
 
-- **Platform**: iOS 16+
-- **Framework**: SwiftUI
-- **Architecture**: MVVM (Model-View-ViewModel)
-- **Backend**: Firebase/Firestore
-- **Authentication**: Firebase Auth (Google Sign-In)
-- **AI**: Azure OpenAI API (GPT-4)
-- **Voice**: iOS Speech Recognition Framework
-- **Charts**: Swift Charts
-- **Data**: SwiftData/Core Data (local) + Firestore (cloud)
+**Current Status:** MVP Core Features Complete ✅
+**Platform:** Flutter (Web, Android, iOS, Desktop)
+**Development:** Active
 
-## Project Structure
+---
 
-```
-SpendWiseAI/
-├── .gitignore                     # Prevents API key leaks
-├── README.md                      # This file
-├── DESIGN.md                      # Design decisions and architecture
-├── FEATURES.md                    # Detailed feature specifications
-├── SpendWiseAI.xcodeproj/         # Xcode project
-├── SpendWiseAI/
-│   ├── App/
-│   │   ├── SpendWiseAIApp.swift   # Main app entry point
-│   │   └── Config.swift           # API keys (gitignored)
-│   ├── Models/                    # Data models
-│   ├── Views/                     # SwiftUI views
-│   ├── ViewModels/                # View models (business logic)
-│   ├── Services/                  # API services (Azure, Firebase, Auth)
-│   ├── Components/                # Reusable UI components
-│   ├── Utilities/                 # Helpers and extensions
-│   └── Resources/                 # Assets, fonts, etc.
-└── SpendWiseAITests/              # Unit tests
-```
+## ✨ Features
 
-## Prerequisites
+### ✅ Implemented (MVP)
+- **🎙️ Natural Language Input**: Type expenses naturally ("spent $25 on lunch")
+- **🤖 AI Auto-Categorization**: Azure OpenAI GPT-4o automatically categorizes expenses
+- **📊 Live Dashboard**: Real-time analytics with category breakdowns
+- **💬 AI Chat Assistant**: Ask questions about spending patterns and get insights
+- **🏷️ Smart Categories**: 7 default categories with real-time spending stats
+- **📱 Cross-Platform**: Runs on Web, Android, iOS (Flutter)
 
-Before you begin, ensure you have:
+### 🚧 In Progress
+- **🔊 Voice Input**: UI ready, speech-to-text integration pending
+- **📈 Charts**: Pie/line charts for visualizations (fl_chart)
+- **💾 Data Persistence**: Hive for local storage
+- **🔄 Cloud Sync**: Firebase integration
+- **🔐 Authentication**: Google Sign-In
 
-- macOS with Xcode 15+ installed
-- iOS 16+ target device or simulator
+### 📋 Planned
+- Receipt scanning with OCR
+- Budget tracking and alerts
+- Recurring expense detection
+- Multi-currency support
+- Data export (CSV, PDF)
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: Flutter 3.38.9
+- **Language**: Dart 3.10.8
+- **State Management**: Singleton services with StreamControllers
+- **UI**: Material Design with custom dark theme
+
+### Backend & AI
+- **AI Provider**: Azure OpenAI (GPT-4o model)
+- **API Version**: 2024-12-01-preview
+- **Future**: Firebase/Firestore for cloud sync
+
+### Local Storage (Planned)
+- **Hive**: Fast, local NoSQL database
+- **Planned**: Firebase Firestore for cloud sync
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Flutter SDK 3.0+ ([Install Flutter](https://docs.flutter.dev/get-started/install))
 - Azure OpenAI account with API access
-- Firebase project set up
-- Google Cloud Console project (for Google Sign-In)
-- Apple Developer account (for device testing)
+- Chrome browser (for web development)
 
-## Setup Instructions
+### Installation
 
-### 1. Clone the Repository
-
+1. **Clone the repository**
 ```bash
 git clone https://github.com/vatsalkhemani/SpendWise-AI.git
-cd SpendWise\ AI
+cd SpendWiseAI
 ```
 
-### 2. Azure OpenAI Setup
+2. **Install dependencies**
+```bash
+flutter pub get
+```
 
-1. Go to [Azure Portal](https://portal.azure.com)
-2. Create an Azure OpenAI resource
-3. Deploy a GPT-4 model
-4. Note your:
-   - API Endpoint
-   - API Key
-   - Deployment Name
+3. **Configure Azure OpenAI**
 
-### 3. Firebase Setup
+Create `lib/config/config.dart` (this file is gitignored):
+```dart
+class AzureOpenAIConfig {
+  static const String endpoint = 'YOUR_AZURE_ENDPOINT';
+  static const String apiKey = 'YOUR_API_KEY';
+  static const String deploymentName = 'gpt-4o';
+  static const String apiVersion = '2024-12-01-preview';
 
-1. Go to [Firebase Console](https://console.firebase.google.com)
-2. Create a new project (or use existing)
-3. Add an iOS app to your project
-4. Download `GoogleService-Info.plist`
-5. Enable **Firestore Database**:
-   - Start in production mode
-   - Choose a location
-6. Enable **Authentication**:
-   - Go to Authentication > Sign-in method
-   - Enable Google Sign-In
-7. Set up Firestore Security Rules:
+  static String get chatCompletionUrl =>
+      '$endpoint/openai/deployments/$deploymentName/chat/completions?api-version=$apiVersion';
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
+  static Map<String, String> get headers => {
+    'Content-Type': 'application/json',
+    'api-key': apiKey,
+  };
+
+  static bool get isConfigured =>
+      endpoint.isNotEmpty &&
+      apiKey.isNotEmpty &&
+      deploymentName.isNotEmpty;
 }
 ```
 
-### 4. Configure the Project
+4. **Run the app**
+```bash
+# For web (Chrome)
+flutter run -d chrome
 
-1. Open the project in Xcode:
-   ```bash
-   open SpendWiseAI.xcodeproj
-   ```
+# For Android
+flutter run
 
-2. Add `GoogleService-Info.plist` to the project (drag into Xcode)
-
-3. Create `Config.swift` in the `App/` folder:
-
-```swift
-// Config.swift
-// ⚠️ This file is gitignored - never commit API keys!
-
-import Foundation
-
-struct AzureOpenAIConfig {
-    static let endpoint = "YOUR_AZURE_ENDPOINT"
-    static let apiKey = "YOUR_AZURE_API_KEY"
-    static let deploymentName = "gpt-4"
-    static let apiVersion = "2024-02-15-preview"
-}
-
-struct AppConfig {
-    static let appName = "SpendWise AI"
-    static let bundleIdentifier = "com.yourcompany.spendwiseai"
-}
+# For iOS (requires macOS)
+flutter run -d ios
 ```
 
-4. Replace placeholders with your actual values
+---
 
-### 5. Install Dependencies
-
-The project uses Swift Package Manager. Dependencies will be resolved automatically when you build.
-
-Required packages:
-- Firebase iOS SDK
-- Firebase Auth
-- Firebase Firestore
-
-### 6. Build and Run
-
-1. Select your target device/simulator
-2. Press `Cmd + R` to build and run
-3. Sign in with Google when prompted
-4. Start tracking expenses!
-
-## Development Principles
-
-This project follows these core principles:
-
-✅ **Always maintain DESIGN.md and FEATURES.md** - Update when making changes
-✅ **Focus on functionality** - Working features over optimization
-✅ **Keep it clean and simple** - Avoid over-engineering
-✅ **API security first** - Never commit API keys or secrets
-✅ **Test voice input thoroughly** - Core feature that must work well
-
-## Usage Examples
+## 📖 Usage
 
 ### Adding Expenses
 
 **Text Input:**
-- "spent $67.32 on groceries at Walmart"
-- "$25.50 lunch at McDonald's with Sarah"
-- "coffee with Mike $18.75"
+```
+spent $67.32 on groceries at Walmart
+$25.50 lunch at McDonald's with Sarah
+coffee with Mike $18.75
+45 dollars on uber to airport
+```
 
-**Voice Input:**
-- Tap microphone icon
-- Speak naturally: "I spent forty-five dollars on transportation"
-- AI processes and categorizes automatically
+**The AI extracts:**
+- Amount: $67.32
+- Category: Groceries (auto-detected)
+- Description: "groceries at Walmart"
+- Person: Optional (e.g., "with Sarah")
+- Date: Today (or specified date)
 
 ### AI Chat Queries
 
-- "What's my total spending this month?"
-- "Which category do I spend most on?"
-- "Show me food spending trends"
-- "Can I afford a $200 purchase this month?"
-- "What's my average transaction amount?"
+Ask your financial assistant:
+```
+"What's my total spending this month?"
+"Which category do I spend most on?"
+"How much did I spend on food?"
+"Any unusual spending patterns?"
+```
 
-## Features Roadmap
+---
 
-### Phase 1: MVP ✅ (Current)
-- Natural language expense input (text + voice)
-- AI auto-categorization
-- Dashboard with charts
-- Category management
-- AI chat assistant
-- Google authentication
-- Cloud sync
+## 📁 Project Structure
 
-### Phase 2: Enhancements
-- Receipt scanning with OCR
-- Budget alerts and notifications
-- Recurring expense tracking
-- Data export (CSV, PDF)
-- Dark mode support
+```
+lib/
+├── main.dart                      # App entry point
+├── config/
+│   └── config.dart               # API keys (gitignored)
+├── models/
+│   ├── expense.dart              # Expense data model
+│   └── category.dart             # Category data model
+├── services/
+│   ├── azure_openai_service.dart # AI integration
+│   └── expense_service.dart      # Data management
+├── screens/
+│   ├── chat_screen.dart          # Expense input
+│   ├── dashboard_screen.dart     # Analytics
+│   ├── categories_screen.dart    # Category management
+│   └── ai_chat_screen.dart       # AI assistant
+└── theme/
+    └── app_theme.dart            # UI theme
+```
 
-### Phase 3: Advanced
-- iOS Widget for quick logging
-- Apple Watch companion app
-- Siri shortcuts integration
-- Advanced analytics and forecasting
-- Multi-currency support
+---
 
-## API Cost Considerations
+## 🔧 Development
 
-**Azure OpenAI Usage:**
-- Each expense input: ~500 tokens (~$0.01)
-- Each chat query: ~1000-2000 tokens (~$0.02-$0.04)
-- Estimated monthly cost for active user: ~$5-10
+### Running Tests
+```bash
+flutter test
+```
 
-**Firebase:**
-- Free tier includes:
-  - 50K reads/day
-  - 20K writes/day
-  - 1GB storage
-- Typical user well within free limits
+### Code Analysis
+```bash
+flutter analyze
+```
 
-## Security
+### Hot Reload
+While app is running, press `r` in terminal for hot reload, `R` for hot restart.
 
-- All API keys stored in `Config.swift` (gitignored)
-- Firestore security rules enforce user data isolation
-- Google Sign-In handles authentication securely
-- No sensitive data stored locally unencrypted
-- HTTPS for all API calls
+---
 
-## Testing
+## 🔐 Security
 
-### Manual Testing Checklist
+- **API Keys**: Stored in `lib/config/config.dart` (gitignored)
+- **Never commit**: config.dart, .env files, or any secrets
+- **HTTPS**: All API calls use secure connections
 
-- [ ] Google Sign-In works
-- [ ] Text expense input parses correctly
-- [ ] Voice input recognizes speech accurately
-- [ ] AI categorizes expenses appropriately
-- [ ] Expenses sync to Firestore
-- [ ] Dashboard displays correct totals
-- [ ] Charts render spending data
-- [ ] Categories can be edited/created
-- [ ] AI chat responds with relevant insights
-- [ ] Offline mode works (local cache)
-- [ ] App syncs when back online
+⚠️ **CRITICAL**: The `config.dart` file is gitignored to protect your API keys. Never commit this file!
 
-### Voice Testing Scenarios
+---
 
-- Quiet environment
-- Background noise (café, street)
-- Different accents
-- Various expense formats
-- Long/complex descriptions
+## 📊 Architecture
 
-## Troubleshooting
+### MVVM Pattern
+```
+Screens (UI) → Services (Business Logic) → Models (Data)
+```
 
-### Build Errors
+### Data Flow
+```
+User Input → Azure OpenAI → Parse Response →
+ExpenseService → Stream Updates → All Screens Refresh
+```
 
-**Missing GoogleService-Info.plist:**
-- Download from Firebase Console
-- Add to Xcode project root
+### State Management
+- Singleton services for shared state
+- StreamControllers for reactive updates
+- StreamBuilder widgets for UI updates
 
-**Config.swift not found:**
-- Create file as shown in setup instructions
-- Ensure it's added to target
+---
 
-**Azure API errors:**
-- Verify endpoint URL is correct
-- Check API key is valid
-- Ensure deployment name matches
+## 🎨 UI Design
 
-### Runtime Issues
+**Theme:** iOS-inspired dark theme
+- Background: #1C1C1E (dark)
+- Cards: #2C2C2E (charcoal)
+- Accent: #FFD60A (yellow)
+- Typography: San Francisco-style fonts
 
-**Voice input not working:**
-- Check microphone permissions in Settings
-- Ensure running on physical device (not simulator)
+**Screens:**
+1. **Chat Screen**: Natural language expense input
+2. **Dashboard**: Monthly totals, category breakdown, recent expenses
+3. **Categories**: Manage expense categories
+4. **AI Chat**: Financial insights and Q&A
 
-**Firestore sync failing:**
-- Verify internet connection
-- Check Firebase security rules
-- Ensure user is authenticated
+---
 
-## Contributing
+## 🗺️ Roadmap
 
-This is a personal project, but feedback and suggestions are welcome! Feel free to:
-- Open issues for bugs or feature requests
-- Submit pull requests with improvements
-- Share your experience using the app
+### Phase 1: Complete MVP (Next) 🎯
+- [ ] Add Hive for data persistence
+- [ ] Implement voice input (speech_to_text)
+- [ ] Add charts (fl_chart)
+- [ ] Enable category CRUD operations
 
-## License
+### Phase 2: Production Ready
+- [ ] Firebase integration (Firestore, Auth)
+- [ ] Google Sign-In
+- [ ] Cloud sync with offline support
+- [ ] Multi-device support
 
-MIT License - See LICENSE file for details
+### Phase 3: Advanced Features
+- [ ] Receipt scanning (OCR)
+- [ ] Budget tracking & alerts
+- [ ] Recurring expense detection
+- [ ] Data export (CSV, PDF)
+- [ ] Multi-currency support
 
-## Author
+See [MASTER_ROADMAP.md](MASTER_ROADMAP.md) for detailed feature breakdown.
 
-Vatsal Khemani ([@vatsalkhemani](https://github.com/vatsalkhemani))
+---
 
-## Acknowledgments
+## 💰 API Costs
 
-- Azure OpenAI for AI capabilities
-- Firebase for backend infrastructure
-- SwiftUI community for inspiration
-- Design inspiration from modern expense trackers
+### Azure OpenAI
+- Expense parsing: ~500 tokens (~$0.01 per expense)
+- Chat queries: ~1000-2000 tokens (~$0.02-$0.04 per query)
+- Estimated: $5-10/month for active user
+
+### Firebase (When Implemented)
+- Free tier: 50K reads/day, 20K writes/day, 1GB storage
+- Typical user: Well within free limits
+
+---
+
+## 🤝 Contributing
+
+This is a personal project, but feedback and contributions are welcome!
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+---
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) file for details
+
+---
+
+## 👤 Author
+
+**Vatsal Khemani**
+- GitHub: [@vatsalkhemani](https://github.com/vatsalkhemani)
+- Email: vatsalkhemani@gmail.com
+
+---
+
+## 🙏 Acknowledgments
+
+- **Azure OpenAI** for AI capabilities
+- **Flutter Team** for the amazing framework
+- **Firebase** for backend infrastructure (planned)
+
+---
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/vatsalkhemani/SpendWise-AI/issues)
+- **Documentation**: See [CLAUDE.md](CLAUDE.md) for development guide
+- **Roadmap**: See [MASTER_ROADMAP.md](MASTER_ROADMAP.md) for feature plans
 
 ---
 
 **Built with ❤️ and AI to make expense tracking effortless**
 
-## Support
-
-For questions or issues:
-- Email: vatsalkhemani@gmail.com
-- GitHub Issues: [Create an issue](https://github.com/vatsalkhemani/SpendWise-AI/issues)
-
----
-
-Last Updated: February 11, 2026
+*Last Updated: February 12, 2026*

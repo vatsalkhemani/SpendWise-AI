@@ -6,9 +6,7 @@ import 'screens/ai_chat_screen.dart';
 import 'services/expense_service.dart';
 
 void main() {
-  // Initialize services
   ExpenseService().init();
-
   runApp(const SpendWiseApp());
 }
 
@@ -25,10 +23,10 @@ class SpendWiseApp extends StatelessWidget {
         primaryColor: const Color(0xFFFFD60A),
         scaffoldBackgroundColor: const Color(0xFF1C1C1E),
         cardColor: const Color(0xFF2C2C2E),
-        colorScheme: ColorScheme.dark(
-          primary: const Color(0xFFFFD60A),
-          secondary: const Color(0xFFFFD60A),
-          surface: const Color(0xFF2C2C2E),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFFFFD60A),
+          secondary: Color(0xFFFFD60A),
+          surface: Color(0xFF2C2C2E),
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF1C1C1E),
@@ -72,6 +70,8 @@ class _MainScreenState extends State<MainScreen> {
         backgroundColor: const Color(0xFF2C2C2E),
         selectedItemColor: const Color(0xFFFFD60A),
         unselectedItemColor: Colors.grey,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
