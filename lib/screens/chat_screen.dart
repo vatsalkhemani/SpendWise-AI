@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/azure_openai_service.dart';
+import '../services/expense_service.dart';
 import '../models/expense.dart';
 import 'package:uuid/uuid.dart';
 
@@ -14,8 +15,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<ChatMessage> _messages = [];
   final AzureOpenAIService _aiService = AzureOpenAIService();
+  final ExpenseService _expenseService = ExpenseService();
   bool _isProcessing = false;
-  double _monthlyTotal = 0.0;
 
   @override
   Widget build(BuildContext context) {
@@ -32,26 +33,34 @@ class _ChatScreenState extends State<ChatScreen> {
           // Monthly total
           Container(
             padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                const Text(
-                  'This Month\'s Total',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '\$${_monthlyTotal.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  '5 transactions',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
+            child: StreamBuilder<List<Expense>>(
+              stream: _expenseService.expensesStream,
+              builder: (context, snapshot) {
+                final monthlyTotal = _expenseService.getMonthlyTotal();
+                final transactionCount = _expenseService.getMonthlyTransactionCount();
+
+                return Column(
+                  children: [
+                    const Text(
+                      'This Month\'s Total',
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '\$${monthlyTotal.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$transactionCount ${transactionCount == 1 ? 'transaction' : 'transactions'}',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
 
@@ -203,12 +212,14 @@ class _ChatScreenState extends State<ChatScreen> {
         createdAt: DateTime.now(),
       );
 
-      // Update monthly total
+      // Save to expense service
+      _expenseService.addExpense(expense);
+
+      // Show confirmation
       setState(() {
-        _monthlyTotal += expense.amount;
         _messages.add(
           ChatMessage(
-            content: 'Added: ${expense.formattedAmount} - ${expense.description}',
+            content: '✓ Added: ${expense.formattedAmount} - ${expense.description} (${expense.category})',
             isFromUser: false,
           ),
         );

@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git config:*)",
-      "Bash(where:*)"
+      "Bash(where:*)",
+      "Bash(flutter run:*)"
     ]
   }
 }

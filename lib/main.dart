@@ -3,8 +3,12 @@ import 'screens/chat_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/categories_screen.dart';
 import 'screens/ai_chat_screen.dart';
+import 'services/expense_service.dart';
 
 void main() {
+  // Initialize services
+  ExpenseService().init();
+
   runApp(const SpendWiseApp());
 }
 

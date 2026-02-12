@@ -1,20 +1,31 @@
 import 'package:flutter/material.dart';
 import '../config/config.dart';
+import '../services/expense_service.dart';
+import '../models/category.dart';
 
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final expenseService = ExpenseService();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Categories'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: StreamBuilder<List<Category>>(
+        stream: expenseService.categoriesStream,
+        builder: (context, snapshot) {
+          final categories = expenseService.categories;
+          final spendingByCategory = expenseService.getSpendingByCategory();
+          final transactionCounts = expenseService.getCategoryTransactionCounts();
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             // AI Category Assistant
             Container(
               padding: const EdgeInsets.all(20),
@@ -55,24 +66,30 @@ class CategoriesScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-            // Categories list
-            const Text(
-              'Your Categories',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                // Categories list
+                const Text(
+                  'Your Categories',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+
+                ...categories.map((category) {
+                  final spent = spendingByCategory[category.name] ?? 0.0;
+                  final count = transactionCounts[category.name] ?? 0;
+                  return _buildCategoryCard(
+                    category.name,
+                    category.colorHex,
+                    spent,
+                    count,
+                    context,
+                  );
+                }),
+              ],
             ),
-            const SizedBox(height: 16),
-
-            ...DefaultCategories.categories.map((cat) {
-              return _buildCategoryCard(
-                cat['name'] as String,
-                cat['color'] as String,
-                context,
-              );
-            }),
-          ],
-        ),
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -97,6 +114,8 @@ class CategoriesScreen extends StatelessWidget {
   Widget _buildCategoryCard(
     String name,
     String colorHex,
+    double totalSpent,
+    int transactionCount,
     BuildContext context,
   ) {
     final color = Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
@@ -141,9 +160,9 @@ class CategoriesScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  '\$0.00 • 0 transactions',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                Text(
+                  '\$${totalSpent.toStringAsFixed(2)} • $transactionCount ${transactionCount == 1 ? 'transaction' : 'transactions'}',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
