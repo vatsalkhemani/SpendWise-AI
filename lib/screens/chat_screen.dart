@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../services/azure_openai_service.dart';
 import '../services/expense_service.dart';
+import '../services/auth_service.dart';
 import '../models/expense.dart';
 import '../utils/animations.dart';
 import 'package:uuid/uuid.dart';
@@ -315,7 +316,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       final expense = Expense(
         id: const Uuid().v4(),
-        userId: 'user123',
+        userId: AuthService().userId ?? 'anonymous',
         amount: (parsed['amount'] as num).toDouble(),
         category: parsed['category'] as String,
         description: parsed['description'] as String,

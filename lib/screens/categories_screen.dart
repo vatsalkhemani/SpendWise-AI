@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../config/config.dart';
 import '../services/expense_service.dart';
+import '../services/auth_service.dart';
 import '../models/category.dart';
 import '../utils/animations.dart';
 
@@ -14,6 +14,9 @@ class CategoriesScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Categories'),
+        actions: [
+          _buildUserMenu(context),
+        ],
       ),
       body: StreamBuilder<List<Category>>(
         stream: expenseService.categoriesStream,
@@ -321,6 +324,111 @@ class CategoriesScreen extends StatelessWidget {
               backgroundColor: Colors.red,
             ),
             child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build user menu with sign-out option
+  static Widget _buildUserMenu(BuildContext context) {
+    final authService = AuthService();
+    final photoUrl = authService.getUserPhotoUrl();
+    final displayName = authService.getUserDisplayName();
+    final email = authService.userEmail ?? '';
+
+    return PopupMenuButton<String>(
+      onSelected: (value) {
+        if (value == 'signout') {
+          _showSignOutDialog(context);
+        }
+      },
+      offset: const Offset(0, 50),
+      itemBuilder: (context) => [
+        // User info header (disabled, not selectable)
+        PopupMenuItem<String>(
+          enabled: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                displayName,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                email,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF98989D),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        // Sign out option
+        const PopupMenuItem<String>(
+          value: 'signout',
+          child: Row(
+            children: [
+              Icon(Icons.logout, size: 20),
+              SizedBox(width: 12),
+              Text('Sign Out'),
+            ],
+          ),
+        ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: CircleAvatar(
+          radius: 18,
+          backgroundColor: const Color(0xFFFFD60A),
+          backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+          child: photoUrl == null
+              ? Text(
+                  authService.getUserInitials(),
+                  style: const TextStyle(
+                    color: Color(0xFF1C1C1E),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                )
+              : null,
+        ),
+      ),
+    );
+  }
+
+  /// Show sign-out confirmation dialog
+  static void _showSignOutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+
+              // Sign out from both services
+              await ExpenseService().signOut();
+              await AuthService().signOut();
+
+              // Auth state change will trigger navigation to LoginScreen
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Sign Out'),
           ),
         ],
       ),

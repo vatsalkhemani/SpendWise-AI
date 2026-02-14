@@ -91,6 +91,9 @@ GoogleService-Info.plist
 secrets/
 APIKeys.plist
 
+# Claude Code local settings
+.claude/
+
 # Azure OpenAI Keys
 AzureConfig.swift
 OpenAIConfig.swift
@@ -180,3 +183,8 @@ lib/config/secrets.dart
 firebase_options.dart
 google-services.json
 GoogleService-Info.plist
+
+# Firebase config files (specific paths)
+web/firebase-config.js
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
