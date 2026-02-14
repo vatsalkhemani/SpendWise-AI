@@ -29,6 +29,9 @@ class Expense extends HiveObject {
   @HiveField(7)
   final DateTime createdAt;
 
+  @HiveField(8)
+  final DateTime updatedAt;
+
   Expense({
     required this.id,
     required this.userId,
@@ -38,7 +41,8 @@ class Expense extends HiveObject {
     this.person,
     required this.date,
     required this.createdAt,
-  });
+    DateTime? updatedAt,
+  }) : updatedAt = updatedAt ?? createdAt;
 
   // Format amount as currency
   String get formattedAmount {
@@ -66,6 +70,7 @@ class Expense extends HiveObject {
       'person': person,
       'date': date.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
@@ -80,6 +85,9 @@ class Expense extends HiveObject {
       person: json['person'] as String?,
       date: DateTime.parse(json['date'] as String),
       createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: json['updatedAt'] != null
+        ? DateTime.parse(json['updatedAt'] as String)
+        : DateTime.parse(json['createdAt'] as String),
     );
   }
 
@@ -93,6 +101,7 @@ class Expense extends HiveObject {
     String? person,
     DateTime? date,
     DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Expense(
       id: id ?? this.id,
@@ -103,6 +112,7 @@ class Expense extends HiveObject {
       person: person ?? this.person,
       date: date ?? this.date,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }

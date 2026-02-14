@@ -15,6 +15,9 @@ class DashboardScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Dashboard'),
         centerTitle: true,
+        actions: [
+          _buildSyncStatusIndicator(expenseService),
+        ],
       ),
       body: StreamBuilder<List<Expense>>(
         stream: expenseService.expensesStream,
@@ -23,7 +26,6 @@ class DashboardScreen extends StatelessWidget {
           final spendingByCategory = expenseService.getSpendingByCategory(
             startDate: DateTime(DateTime.now().year, DateTime.now().month, 1),
           );
-          final activeCategories = spendingByCategory.length;
           final transactionCount = expenseService.getMonthlyTransactionCount();
 
           return SingleChildScrollView(
@@ -380,6 +382,31 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSyncStatusIndicator(ExpenseService expenseService) {
+    if (!expenseService.isSyncEnabled) {
+      return const SizedBox.shrink();
+    }
+
+    return StreamBuilder<bool>(
+      stream: expenseService.syncStatusStream,
+      initialData: false,
+      builder: (context, snapshot) {
+        final isSyncing = snapshot.data ?? false;
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Tooltip(
+            message: isSyncing ? 'Syncing...' : 'Synced to cloud',
+            child: Icon(
+              isSyncing ? Icons.cloud_upload : Icons.cloud_done,
+              color: isSyncing ? const Color(0xFFFFD60A) : Colors.green,
+              size: 24,
+            ),
+          ),
+        );
+      },
     );
   }
 }

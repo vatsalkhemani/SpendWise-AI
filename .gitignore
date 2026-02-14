@@ -188,3 +188,4 @@ GoogleService-Info.plist
 web/firebase-config.js
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
+nul

@@ -26,6 +26,12 @@ class Category extends HiveObject {
   @HiveField(6)
   final int transactionCount;
 
+  @HiveField(7)
+  final DateTime createdAt;
+
+  @HiveField(8)
+  final DateTime updatedAt;
+
   Category({
     required this.id,
     required this.name,
@@ -34,7 +40,10 @@ class Category extends HiveObject {
     this.isDefault = false,
     this.totalSpent = 0.0,
     this.transactionCount = 0,
-  });
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? (createdAt ?? DateTime.now());
 
   // Get Flutter Color from hex
   Color get color {
@@ -77,11 +86,14 @@ class Category extends HiveObject {
       'isDefault': isDefault,
       'totalSpent': totalSpent,
       'transactionCount': transactionCount,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
   // Create from JSON
   factory Category.fromJson(Map<String, dynamic> json) {
+    final now = DateTime.now();
     return Category(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -90,6 +102,12 @@ class Category extends HiveObject {
       isDefault: json['isDefault'] as bool? ?? false,
       totalSpent: (json['totalSpent'] as num?)?.toDouble() ?? 0.0,
       transactionCount: json['transactionCount'] as int? ?? 0,
+      createdAt: json['createdAt'] != null
+        ? DateTime.parse(json['createdAt'] as String)
+        : now,
+      updatedAt: json['updatedAt'] != null
+        ? DateTime.parse(json['updatedAt'] as String)
+        : now,
     );
   }
 
@@ -102,6 +120,8 @@ class Category extends HiveObject {
     bool? isDefault,
     double? totalSpent,
     int? transactionCount,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Category(
       id: id ?? this.id,
@@ -111,6 +131,8 @@ class Category extends HiveObject {
       isDefault: isDefault ?? this.isDefault,
       totalSpent: totalSpent ?? this.totalSpent,
       transactionCount: transactionCount ?? this.transactionCount,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }
