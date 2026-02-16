@@ -32,6 +32,18 @@ class Expense extends HiveObject {
   @HiveField(8)
   final DateTime updatedAt;
 
+  @HiveField(9)
+  final bool isRecurring;
+
+  @HiveField(10)
+  final String? recurringFrequency; // 'daily', 'weekly', 'monthly', 'yearly'
+
+  @HiveField(11)
+  final DateTime? recurringEndDate;
+
+  @HiveField(12)
+  final String? recurringTemplateId; // Links recurring instances
+
   Expense({
     required this.id,
     required this.userId,
@@ -42,6 +54,10 @@ class Expense extends HiveObject {
     required this.date,
     required this.createdAt,
     DateTime? updatedAt,
+    this.isRecurring = false,
+    this.recurringFrequency,
+    this.recurringEndDate,
+    this.recurringTemplateId,
   }) : updatedAt = updatedAt ?? createdAt;
 
   // Format amount as currency
@@ -59,6 +75,23 @@ class Expense extends HiveObject {
     return DateFormat('h:mm a').format(createdAt);
   }
 
+  // Get recurring display text
+  String get recurringDisplayText {
+    if (!isRecurring || recurringFrequency == null) return '';
+    switch (recurringFrequency) {
+      case 'daily':
+        return 'Daily';
+      case 'weekly':
+        return 'Weekly';
+      case 'monthly':
+        return 'Monthly';
+      case 'yearly':
+        return 'Yearly';
+      default:
+        return '';
+    }
+  }
+
   // Convert to JSON for Firestore
   Map<String, dynamic> toJson() {
     return {
@@ -71,6 +104,10 @@ class Expense extends HiveObject {
       'date': date.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'isRecurring': isRecurring,
+      'recurringFrequency': recurringFrequency,
+      'recurringEndDate': recurringEndDate?.toIso8601String(),
+      'recurringTemplateId': recurringTemplateId,
     };
   }
 
@@ -88,6 +125,12 @@ class Expense extends HiveObject {
       updatedAt: json['updatedAt'] != null
         ? DateTime.parse(json['updatedAt'] as String)
         : DateTime.parse(json['createdAt'] as String),
+      isRecurring: json['isRecurring'] as bool? ?? false,
+      recurringFrequency: json['recurringFrequency'] as String?,
+      recurringEndDate: json['recurringEndDate'] != null
+          ? DateTime.parse(json['recurringEndDate'] as String)
+          : null,
+      recurringTemplateId: json['recurringTemplateId'] as String?,
     );
   }
 
@@ -102,6 +145,10 @@ class Expense extends HiveObject {
     DateTime? date,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isRecurring,
+    String? recurringFrequency,
+    DateTime? recurringEndDate,
+    String? recurringTemplateId,
   }) {
     return Expense(
       id: id ?? this.id,
@@ -113,6 +160,10 @@ class Expense extends HiveObject {
       date: date ?? this.date,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isRecurring: isRecurring ?? this.isRecurring,
+      recurringFrequency: recurringFrequency ?? this.recurringFrequency,
+      recurringEndDate: recurringEndDate ?? this.recurringEndDate,
+      recurringTemplateId: recurringTemplateId ?? this.recurringTemplateId,
     );
   }
 }

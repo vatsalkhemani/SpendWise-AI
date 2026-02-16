@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/expense_service.dart';
+import '../services/export_service.dart';
 import '../models/expense.dart';
 import '../utils/animations.dart';
+import 'all_expenses_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -16,6 +18,53 @@ class DashboardScreen extends StatelessWidget {
         title: const Text('Dashboard'),
         centerTitle: true,
         actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              if (value == 'all_expenses') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AllExpensesScreen()),
+                );
+              } else if (value == 'export_csv') {
+                _exportToCSV(context, expenseService);
+              } else if (value == 'export_report') {
+                _exportToReport(context, expenseService);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'all_expenses',
+                child: Row(
+                  children: [
+                    Icon(Icons.list_alt, size: 20),
+                    SizedBox(width: 12),
+                    Text('All Expenses'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'export_csv',
+                child: Row(
+                  children: [
+                    Icon(Icons.file_download, size: 20),
+                    SizedBox(width: 12),
+                    Text('Export to CSV'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'export_report',
+                child: Row(
+                  children: [
+                    Icon(Icons.description, size: 20),
+                    SizedBox(width: 12),
+                    Text('Export Report'),
+                  ],
+                ),
+              ),
+            ],
+          ),
           _buildSyncStatusIndicator(expenseService),
         ],
       ),
@@ -357,6 +406,24 @@ class DashboardScreen extends StatelessWidget {
               fontSize: 16,
             ),
           ),
+          const SizedBox(width: 8),
+          // Edit button
+          IconButton(
+            icon: const Icon(Icons.edit, size: 20),
+            onPressed: () => _showEditExpenseDialog(context, expense),
+            color: Colors.blue,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+          const SizedBox(width: 4),
+          // Delete button
+          IconButton(
+            icon: const Icon(Icons.delete, size: 20),
+            onPressed: () => _showDeleteExpenseDialog(context, expense),
+            color: Colors.red,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
         ],
       ),
     );
@@ -407,6 +474,221 @@ class DashboardScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  void _showEditExpenseDialog(BuildContext context, Expense expense) {
+    final expenseService = ExpenseService();
+    final amountController = TextEditingController(text: expense.amount.toString());
+    final descriptionController = TextEditingController(text: expense.description);
+    String selectedCategory = expense.category;
+    DateTime selectedDate = expense.date;
+    final personController = TextEditingController(text: expense.person ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit Expense'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Amount field
+                TextField(
+                  controller: amountController,
+                  decoration: const InputDecoration(
+                    labelText: 'Amount',
+                    prefixText: '\$',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                ),
+                const SizedBox(height: 16),
+                // Description field
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Category dropdown
+                DropdownButtonFormField<String>(
+                  value: selectedCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                  ),
+                  items: expenseService.categories.map((cat) {
+                    return DropdownMenuItem(
+                      value: cat.name,
+                      child: Text(cat.name),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedCategory = value!;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                // Date picker
+                ListTile(
+                  title: Text('Date: ${_formatDate(selectedDate)}'),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        selectedDate = picked;
+                      });
+                    }
+                  },
+                  contentPadding: EdgeInsets.zero,
+                ),
+                const SizedBox(height: 16),
+                // Person field (optional)
+                TextField(
+                  controller: personController,
+                  decoration: const InputDecoration(
+                    labelText: 'Person (optional)',
+                    hintText: 'Who was this with?',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final amount = double.tryParse(amountController.text);
+                if (amount == null || amount <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid amount')),
+                  );
+                  return;
+                }
+
+                if (descriptionController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a description')),
+                  );
+                  return;
+                }
+
+                // Update expense
+                final updatedExpense = expense.copyWith(
+                  amount: amount,
+                  description: descriptionController.text.trim(),
+                  category: selectedCategory,
+                  date: selectedDate,
+                  person: personController.text.trim().isEmpty
+                      ? null
+                      : personController.text.trim(),
+                );
+
+                await expenseService.updateExpense(updatedExpense);
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Expense updated successfully')),
+                  );
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteExpenseDialog(BuildContext context, Expense expense) {
+    final expenseService = ExpenseService();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Expense'),
+        content: Text(
+          'Are you sure you want to delete this expense?\n\n'
+          '${expense.description}\n'
+          '${expense.formattedAmount}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await expenseService.deleteExpense(expense.id);
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Expense deleted successfully')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.month}/${date.day}/${date.year}';
+  }
+
+  void _exportToCSV(BuildContext context, ExpenseService expenseService) {
+    final expenses = expenseService.expenses;
+
+    if (expenses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No expenses to export')),
+      );
+      return;
+    }
+
+    ExportService.exportToCSV(expenses);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Exported ${expenses.length} expenses to CSV')),
+    );
+  }
+
+  void _exportToReport(BuildContext context, ExpenseService expenseService) {
+    final expenses = expenseService.expenses;
+
+    if (expenses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No expenses to export')),
+      );
+      return;
+    }
+
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1);
+    final categoryTotals = expenseService.getSpendingByCategory(startDate: startOfMonth);
+
+    ExportService.exportToTextReport(expenses, categoryTotals);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Exported detailed report')),
     );
   }
 }

@@ -9,7 +9,7 @@ SpendWise AI is an **AI-powered expense tracking app** built with **Flutter** th
 **Platform:** Flutter (cross-platform: Web, iOS, Android, Desktop)
 **Architecture:** MVVM pattern (Models, Services, Screens)
 **AI Provider:** Azure OpenAI API
-**Current Status:** Phase 1 COMPLETE ✅ - Production-ready with persistence, charts, voice, and animations
+**Current Status:** ✅ Phases 1, 2, 3, 4 COMPLETE - Full-featured production app with editing, analytics, budgets, recurring, and export
 
 ---
 
@@ -120,9 +120,11 @@ flutter clean
 
 **`lib/services/expense_service.dart`**:
 - Central singleton service for managing all expenses and categories
-- In-memory storage with reactive StreamControllers
+- Hive local storage with Firestore cloud sync (hybrid architecture)
+- Reactive StreamControllers for live UI updates
 - Provides analytics methods (totals, averages, category breakdowns)
-- Will be extended with Hive/Firebase persistence in Phase 1/2
+- User-specific data isolation (expenses_$userId, categories_$userId)
+- Auto-migration from old data on first launch
 
 **`lib/services/azure_openai_service.dart`**:
 - `parseExpense()` - Parses natural language input → structured expense data
@@ -130,11 +132,20 @@ flutter clean
 - `getInsights()` - Provides AI-driven spending insights
 - `streamChatResponse()` - Powers the AI chat assistant
 
+**`lib/services/firestore_service.dart`** (NEW in Phase 3):
+- Firestore cloud sync service (~280 lines)
+- User-specific collections (users/{userId}/expenses, users/{userId}/categories)
+- CRUD operations: addExpense, updateExpense, deleteExpense
+- Real-time streams: getExpensesStream, getCategoriesStream
+- Batch operations for data migration
+- Error handling and retry logic
+
 **`lib/main.dart`**:
 - App theme (dark mode with yellow accent #FFD60A)
-- Navigation structure (4-tab BottomNavigationBar)
+- Navigation structure (5-tab BottomNavigationBar)
 - MaterialApp configuration
-- ExpenseService initialization
+- Firebase and Hive initialization
+- Auth state management with AuthGate
 
 ---
 
@@ -194,14 +205,69 @@ flutter clean
    - Staggered list animations
    - Page transitions
 
-### ⚠️ What's NOT Yet Implemented (Phase 2)
+### ✅ Phase 2: Firebase Authentication (COMPLETE - Feb 13, 2026)
+- ✅ Firebase Core initialized
+- ✅ Google Sign-In authentication
+- ✅ User-specific Hive boxes (expenses_$userId, categories_$userId)
+- ✅ Multi-user support with data isolation
+- ✅ Migration from old "user123" data
 
-1. **Firebase Integration** - ❌ No cloud sync or multi-device support
-2. **Authentication** - ❌ No user accounts, Google Sign-In, or profiles
-3. **Expense Editing** - ❌ Cannot modify or delete existing expenses
-4. **Advanced Analytics** - ❌ No trends, budgets, or spending goals
-5. **Data Export** - ❌ No CSV/PDF export functionality
-6. **Search & Filters** - ❌ No expense search or date filtering
+### ✅ Phase 3: Cloud Sync (COMPLETE - Feb 14, 2026)
+- ✅ FirestoreService implementation (~280 lines)
+- ✅ Hybrid sync architecture (Hive local + Firestore cloud)
+- ✅ Real-time Firestore listeners (1-3s sync latency)
+- ✅ Auto-migration Hive → Firestore on first launch
+- ✅ Sync status indicator (cloud icon in Dashboard)
+
+### ✅ Phase 4: Advanced Features (COMPLETE - Feb 16, 2026)
+
+**4a. Expense Management** (`lib/screens/dashboard_screen.dart`)
+- ✅ Edit expense dialog with pre-filled fields
+- ✅ Delete expense with confirmation dialog
+- ✅ Edit/delete buttons on each expense tile
+- ✅ Syncs changes to both Hive and Firestore
+
+**4b. Analytics & Insights** (`lib/screens/analytics_screen.dart` - NEW)
+- ✅ 6-month spending trend line chart (fl_chart)
+- ✅ Month-over-month comparison card
+- ✅ Quick stats: Total, Monthly Avg, Transactions, Avg/Transaction
+- ✅ AI-powered insights with "Generate" button
+- ✅ 4 new Azure OpenAI methods: spending summary, pattern detection, predictions, recommendations
+
+**4c. Budget Tracking** (`lib/screens/categories_screen.dart`)
+- ✅ Set monthly budget per category
+- ✅ Budget progress bars with color coding (green/orange/red)
+- ✅ Over-budget warnings
+- ✅ Category model updated with `monthlyBudget` field
+
+**4d. Search & Filters** (`lib/screens/all_expenses_screen.dart` - NEW)
+- ✅ Full-text search (description, person)
+- ✅ Category filter dropdown
+- ✅ Date range picker
+- ✅ Amount range filter (min/max)
+- ✅ Active filter chips with remove option
+
+**4e. Data Export** (`lib/services/export_service.dart` - NEW)
+- ✅ Export to CSV (csv package)
+- ✅ Export to text report with category breakdowns
+- ✅ Browser download functionality (dart:html)
+- ✅ Export menu in Dashboard AppBar
+
+**4f. Recurring Expenses** (`lib/screens/recurring_expenses_screen.dart` - NEW)
+- ✅ Create recurring templates (daily, weekly, monthly, yearly)
+- ✅ Auto-generation of expense instances
+- ✅ Stop recurring expenses
+- ✅ Delete recurring templates and all instances
+- ✅ Expense model updated with 4 recurring fields
+- ✅ Auto-processing on app init
+
+### ⚠️ What's NOT Yet Implemented (Phase 5+ Features)
+
+1. **Collaborative Features** - ❌ No shared expenses or bill splitting
+2. **Mobile Optimization** - ❌ Receipt camera scanning, OCR
+3. **Multi-Currency** - ❌ Only supports single currency (USD)
+4. **Tax Features** - ❌ No tax categorization or reporting
+5. **Receipt Attachments** - ❌ Cannot attach photos/files to expenses
 
 ---
 
@@ -228,6 +294,10 @@ The app uses Azure OpenAI's GPT-4o model for:
 2. **Auto-Categorization** - Description → category assignment
 3. **Financial Insights** - Query → helpful analysis
 4. **AI Chat** - Conversational expense queries
+5. **Spending Summaries** - AI-generated monthly summaries
+6. **Pattern Detection** - Unusual spending pattern identification
+7. **Predictions** - Next month spending forecasts
+8. **Recommendations** - Personalized money-saving tips
 
 **API Configuration:**
 - Endpoint: Configured in `lib/config/config.dart`
@@ -271,21 +341,29 @@ StreamBuilder<List<Expense>>(
 
 ## Data Persistence
 
-**Current:** ✅ **Hive local persistence** (Phase 1 complete)
-**Phase 2 Plan:** Add Firebase Firestore for cloud sync
+**Current:** ✅ **Hybrid Architecture** - Hive (local) + Firestore (cloud)
 
-### Hive Integration ✅ (Implemented)
+### Hive Integration ✅ (Phase 1 - Complete)
 - Dependencies: `hive: ^2.2.3`, `hive_flutter: ^1.1.0`
 - TypeAdapters generated for Expense and Category models
-- Data stored in Hive boxes: `expenses` and `categories`
+- User-specific boxes: `expenses_$userId` and `categories_$userId`
 - Storage: IndexedDB (web) / local filesystem (mobile/desktop)
 - Initialized in `main.dart` before app starts
-- ExpenseService uses Hive boxes for all CRUD operations
+- Instant writes (0ms) for offline-first UX
 
-### Firebase Integration (Planned)
-- Dependencies commented out in pubspec.yaml
-- Will add: `firebase_core`, `firebase_auth`, `cloud_firestore`
-- Authentication: Firebase Auth with Google Sign-In
+### Firestore Integration ✅ (Phase 3 - Complete)
+- Dependencies: `firebase_core`, `firebase_auth`, `cloud_firestore`
+- Cloud sync with real-time listeners (1-3s latency)
+- User-specific collections: `users/{userId}/expenses`, `users/{userId}/categories`
+- Auto-migration: Hive → Firestore on first launch
+- Security rules: User-isolated data access only
+- Composite indexes for efficient queries
+
+### Authentication ✅ (Phase 2 - Complete)
+- Firebase Auth with Google Sign-In
+- User profiles with display name and photo
+- User-specific data isolation
+- Migration from old "user123" data
 
 ---
 
@@ -362,11 +440,12 @@ final insights = await aiService.getInsights(
 
 ## Known Issues & Limitations
 
-### Current Limitations (Phase 2 Features)
-- **No Authentication:** All users share same data ("user123")
-- **No Cloud Sync:** Everything is local (Hive only, no Firebase yet)
-- **No Expense Editing:** Cannot modify or delete existing expenses
+### Current Limitations (Phase 4 Features)
+- **No Expense Editing:** Cannot modify existing expenses
+- **No Expense Deletion:** Cannot delete existing expenses
 - **No Advanced Analytics:** No budgets, trends, or spending goals
+- **No Search/Filters:** Cannot search or filter expenses
+- **No Data Export:** No CSV/PDF export functionality
 
 ### Port Conflicts
 - **Issue:** Ports 8080-8082 often in use on Windows
@@ -378,11 +457,9 @@ final insights = await aiService.getInsights(
 
 ---
 
-## Phase 1 Features ✅ (COMPLETED)
+## Completed Phases ✅
 
-See [PHASE1_COMPLETE.md](PHASE1_COMPLETE.md) for full details.
-
-**All Features Delivered:**
+### Phase 1: Local MVP (Feb 12, 2026)
 1. ✅ **Hive Persistence** - Data persists locally, never lost
 2. ✅ **fl_chart Visualizations** - Interactive pie charts and progress bars
 3. ✅ **Voice Input** - speech_to_text with microphone button
@@ -390,7 +467,35 @@ See [PHASE1_COMPLETE.md](PHASE1_COMPLETE.md) for full details.
 5. ✅ **Dynamic Categorization** - AI uses user's actual categories
 6. ✅ **Smooth Animations** - Fade-in, slide-up, and staggered animations
 
-**Next:** See [MASTER_ROADMAP.md](MASTER_ROADMAP.md) for Phase 2 (Firebase, Auth, Advanced Features)
+See [PHASE1_COMPLETE.md](PHASE1_COMPLETE.md) for full details.
+
+### Phase 2: Firebase Authentication (Feb 13, 2026)
+1. ✅ **Google Sign-In** - Firebase Auth integration
+2. ✅ **User Profiles** - Display name and photo
+3. ✅ **User-Specific Data** - Isolated Hive boxes per user
+4. ✅ **Data Migration** - Auto-migrate from old "user123"
+
+### Phase 3: Cloud Sync (Feb 14, 2026)
+1. ✅ **Firestore Integration** - Cloud database setup
+2. ✅ **Hybrid Sync** - Hive (instant) + Firestore (background)
+3. ✅ **Real-Time Listeners** - Multi-device sync (1-3s latency)
+4. ✅ **Auto-Migration** - Hive → Firestore one-time transfer
+5. ✅ **Sync Indicator** - Cloud icon in Dashboard AppBar
+
+See [FIRESTORE_SYNC_IMPLEMENTATION.md](FIRESTORE_SYNC_IMPLEMENTATION.md) and [PHASE3_QUICK_START.md](PHASE3_QUICK_START.md) for technical details.
+
+### Phase 4: Advanced Features (Feb 16, 2026)
+1. ✅ **Expense Editing/Deletion** - Full CRUD with dialogs
+2. ✅ **Analytics Screen** - 6-month trends, charts, stats (5th tab)
+3. ✅ **Budget Tracking** - Per-category budgets with progress bars
+4. ✅ **AI Insights** - Summaries, patterns, predictions, tips
+5. ✅ **Search & Filters** - Full-text search, category, date, amount filters
+6. ✅ **Data Export** - CSV and text report export
+7. ✅ **Recurring Expenses** - Daily/weekly/monthly/yearly schedules
+
+See [PHASE4_COMPLETE.md](PHASE4_COMPLETE.md) for full details.
+
+**Next:** See [MASTER_ROADMAP.md](MASTER_ROADMAP.md) for Phase 5 (Collaborative Features, Mobile Optimization)
 
 ---
 
@@ -430,11 +535,12 @@ See [PHASE1_COMPLETE.md](PHASE1_COMPLETE.md) for full details.
 - Ensure deployment name matches ("gpt-4o")
 - Check API version compatibility
 
-### Data not persisting
-- ✅ **Fixed** - Hive persistence now implemented
-- Check browser console for "Got object store box" messages
-- Data stored in IndexedDB (web) or filesystem (mobile)
-- Clear browser cache to reset data if needed
+### Data not syncing across devices
+- ✅ **Fixed** - Firestore cloud sync now implemented
+- Check sync status indicator (cloud icon) in Dashboard AppBar
+- Yellow cloud = syncing, green cloud = synced
+- Sync latency: 1-3 seconds across devices
+- Check browser console for Firestore sync messages
 
 ### UI looks wrong on mobile
 - Test in Chrome DevTools mobile view
@@ -480,4 +586,4 @@ See [PHASE1_COMPLETE.md](PHASE1_COMPLETE.md) for full details.
 
 **Remember:** This is a Flutter app, not iOS/SwiftUI. All documentation should reflect Dart/Flutter implementations, not Swift code.
 
-*Last Updated: February 12, 2026*
+*Last Updated: February 16, 2026*

@@ -32,6 +32,9 @@ class Category extends HiveObject {
   @HiveField(8)
   final DateTime updatedAt;
 
+  @HiveField(9)
+  final double? monthlyBudget;
+
   Category({
     required this.id,
     required this.name,
@@ -40,6 +43,7 @@ class Category extends HiveObject {
     this.isDefault = false,
     this.totalSpent = 0.0,
     this.transactionCount = 0,
+    this.monthlyBudget,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) : createdAt = createdAt ?? DateTime.now(),
@@ -76,6 +80,27 @@ class Category extends HiveObject {
     return '\$${totalSpent.toStringAsFixed(2)}';
   }
 
+  // Get budget status (percentage used)
+  double get budgetUsedPercentage {
+    if (monthlyBudget == null || monthlyBudget == 0) return 0.0;
+    return (totalSpent / monthlyBudget!) * 100;
+  }
+
+  // Check if over budget
+  bool get isOverBudget {
+    if (monthlyBudget == null) return false;
+    return totalSpent > monthlyBudget!;
+  }
+
+  // Get budget status color
+  Color get budgetStatusColor {
+    if (monthlyBudget == null) return Colors.grey;
+    final percentage = budgetUsedPercentage;
+    if (percentage >= 100) return Colors.red;
+    if (percentage >= 80) return Colors.orange;
+    return Colors.green;
+  }
+
   // Convert to JSON
   Map<String, dynamic> toJson() {
     return {
@@ -86,6 +111,7 @@ class Category extends HiveObject {
       'isDefault': isDefault,
       'totalSpent': totalSpent,
       'transactionCount': transactionCount,
+      'monthlyBudget': monthlyBudget,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -102,6 +128,7 @@ class Category extends HiveObject {
       isDefault: json['isDefault'] as bool? ?? false,
       totalSpent: (json['totalSpent'] as num?)?.toDouble() ?? 0.0,
       transactionCount: json['transactionCount'] as int? ?? 0,
+      monthlyBudget: (json['monthlyBudget'] as num?)?.toDouble(),
       createdAt: json['createdAt'] != null
         ? DateTime.parse(json['createdAt'] as String)
         : now,
@@ -120,6 +147,7 @@ class Category extends HiveObject {
     bool? isDefault,
     double? totalSpent,
     int? transactionCount,
+    double? monthlyBudget,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -131,6 +159,7 @@ class Category extends HiveObject {
       isDefault: isDefault ?? this.isDefault,
       totalSpent: totalSpent ?? this.totalSpent,
       transactionCount: transactionCount ?? this.transactionCount,
+      monthlyBudget: monthlyBudget ?? this.monthlyBudget,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

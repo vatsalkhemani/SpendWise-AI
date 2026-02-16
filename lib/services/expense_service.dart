@@ -46,6 +46,7 @@ class ExpenseService {
   Stream<List<Category>> get categoriesStream => _categoriesController.stream;
   Stream<bool> get syncStatusStream => _syncStatusController.stream;
   bool get isSyncEnabled => _syncEnabled;
+  String? get currentUserId => _currentUserId;
 
   // Initialize for a specific user
   Future<void> initForUser(String userId) async {
@@ -103,6 +104,13 @@ class ExpenseService {
       await _migrateToFirestore(userId);
       await prefs.setBool('migrated_firestore_$userId', true);
     }
+
+    // Process recurring expenses (check for due payments)
+    processRecurringExpenses().then((created) {
+      if (created > 0) {
+        print('✅ Created $created recurring expense(s)');
+      }
+    });
   }
 
   /// Listen to Firestore streams for real-time updates
@@ -453,6 +461,23 @@ class ExpenseService {
     return expenses.take(limit).toList();
   }
 
+  // Get monthly average spending
+  double getMonthlyAverage() {
+    if (expenses.isEmpty) return 0.0;
+
+    // Group expenses by month
+    final Map<String, double> monthlyTotals = {};
+    for (var expense in expenses) {
+      final monthKey = '${expense.date.year}-${expense.date.month}';
+      monthlyTotals[monthKey] = (monthlyTotals[monthKey] ?? 0.0) + expense.amount;
+    }
+
+    if (monthlyTotals.isEmpty) return 0.0;
+
+    final totalSpent = monthlyTotals.values.reduce((a, b) => a + b);
+    return totalSpent / monthlyTotals.length;
+  }
+
   // Get data for AI insights
   Map<String, dynamic> getExpenseDataForAI() {
     final now = DateTime.now();
@@ -474,6 +499,186 @@ class ExpenseService {
         'date': e.formattedDate,
       }).toList(),
     };
+  }
+
+  // Get monthly spending trends for last N months
+  Map<String, double> getMonthlySpendingTrends({int months = 6}) {
+    final Map<String, double> trends = {};
+    final now = DateTime.now();
+
+    for (int i = months - 1; i >= 0; i--) {
+      final month = DateTime(now.year, now.month - i, 1);
+      final monthEnd = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+      final monthKey = '${month.month}/${month.year}';
+
+      final monthlyTotal = expenses
+          .where((e) => e.date.isAfter(month) && e.date.isBefore(monthEnd))
+          .fold<double>(0.0, (sum, e) => sum + e.amount);
+
+      trends[monthKey] = monthlyTotal;
+    }
+
+    return trends;
+  }
+
+  // Get category spending trends over time
+  Map<String, Map<String, double>> getCategorySpendingTrends({int months = 6}) {
+    final Map<String, Map<String, double>> trends = {};
+    final now = DateTime.now();
+
+    // Initialize categories
+    for (var category in categories) {
+      trends[category.name] = {};
+    }
+
+    for (int i = months - 1; i >= 0; i--) {
+      final month = DateTime(now.year, now.month - i, 1);
+      final monthEnd = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+      final monthKey = '${month.month}/${month.year}';
+
+      for (var category in categories) {
+        final categoryTotal = expenses
+            .where((e) =>
+                e.category == category.name &&
+                e.date.isAfter(month) &&
+                e.date.isBefore(monthEnd))
+            .fold<double>(0.0, (sum, e) => sum + e.amount);
+
+        trends[category.name]![monthKey] = categoryTotal;
+      }
+    }
+
+    return trends;
+  }
+
+  // Get spending comparison (this month vs last month)
+  Map<String, double> getMonthComparison() {
+    final now = DateTime.now();
+    final thisMonthStart = DateTime(now.year, now.month, 1);
+    final lastMonthStart = DateTime(now.year, now.month - 1, 1);
+    final lastMonthEnd = DateTime(now.year, now.month, 0, 23, 59, 59);
+
+    final thisMonthTotal = expenses
+        .where((e) => e.date.isAfter(thisMonthStart))
+        .fold<double>(0.0, (sum, e) => sum + e.amount);
+
+    final lastMonthTotal = expenses
+        .where((e) => e.date.isAfter(lastMonthStart) && e.date.isBefore(lastMonthEnd))
+        .fold<double>(0.0, (sum, e) => sum + e.amount);
+
+    final difference = thisMonthTotal - lastMonthTotal;
+    final percentChange = lastMonthTotal > 0 ? (difference / lastMonthTotal) * 100 : 0.0;
+
+    return {
+      'thisMonth': thisMonthTotal,
+      'lastMonth': lastMonthTotal,
+      'difference': difference,
+      'percentChange': percentChange,
+    };
+  }
+
+  // ========== RECURRING EXPENSES ==========
+
+  // Get all recurring expense templates
+  List<Expense> getRecurringTemplates() {
+    return expenses.where((e) => e.isRecurring && e.recurringTemplateId == null).toList();
+  }
+
+  // Get recurring expenses by template ID
+  List<Expense> getRecurringInstances(String templateId) {
+    return expenses.where((e) => e.recurringTemplateId == templateId).toList();
+  }
+
+  // Check and create due recurring expenses
+  Future<int> processRecurringExpenses() async {
+    int created = 0;
+    final templates = getRecurringTemplates();
+    final now = DateTime.now();
+
+    for (final template in templates) {
+      // Check if recurring end date has passed
+      if (template.recurringEndDate != null &&
+          now.isAfter(template.recurringEndDate!)) {
+        continue;
+      }
+
+      // Get last instance of this recurring expense
+      final instances = getRecurringInstances(template.id);
+      final lastDate = instances.isEmpty
+          ? template.date
+          : instances.map((e) => e.date).reduce((a, b) => a.isAfter(b) ? a : b);
+
+      // Calculate next due date
+      final nextDate = _calculateNextRecurringDate(lastDate, template.recurringFrequency!);
+
+      // Create if due
+      if (nextDate.isBefore(now) || nextDate.isAtSameMomentAs(now)) {
+        final newExpense = Expense(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          userId: template.userId,
+          amount: template.amount,
+          category: template.category,
+          description: template.description,
+          person: template.person,
+          date: nextDate,
+          createdAt: DateTime.now(),
+          isRecurring: false, // Instances are not recurring themselves
+          recurringTemplateId: template.id, // Link to template
+        );
+
+        await addExpense(newExpense);
+        created++;
+      }
+    }
+
+    return created;
+  }
+
+  // Calculate next recurring date
+  DateTime _calculateNextRecurringDate(DateTime lastDate, String frequency) {
+    switch (frequency) {
+      case 'daily':
+        return DateTime(lastDate.year, lastDate.month, lastDate.day + 1);
+      case 'weekly':
+        return DateTime(lastDate.year, lastDate.month, lastDate.day + 7);
+      case 'monthly':
+        return DateTime(lastDate.year, lastDate.month + 1, lastDate.day);
+      case 'yearly':
+        return DateTime(lastDate.year + 1, lastDate.month, lastDate.day);
+      default:
+        return lastDate;
+    }
+  }
+
+  // Stop recurring expense (set end date to today)
+  Future<void> stopRecurringExpense(String templateId) async {
+    final template = expenses.firstWhere((e) => e.id == templateId);
+    if (template.isRecurring) {
+      final updated = template.copyWith(
+        recurringEndDate: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      await updateExpense(updated);
+    }
+  }
+
+  // Update recurring template (affects future instances)
+  Future<void> updateRecurringTemplate(Expense template) async {
+    if (template.isRecurring) {
+      await updateExpense(template);
+    }
+  }
+
+  // Delete all instances of a recurring expense
+  Future<void> deleteRecurringTemplate(String templateId) async {
+    // Delete template
+    await deleteExpense(templateId);
+
+    // Delete all instances
+    final instances = getRecurringInstances(templateId);
+    for (final instance in instances) {
+      await deleteExpense(instance.id);
+    }
   }
 
   // Cleanup

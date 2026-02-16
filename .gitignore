@@ -180,6 +180,7 @@ lib/config/secrets.dart
 *.env
 .env
 .env.*
+test_credentials.env
 firebase_options.dart
 google-services.json
 GoogleService-Info.plist

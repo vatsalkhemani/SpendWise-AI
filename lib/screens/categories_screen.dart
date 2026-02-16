@@ -3,6 +3,7 @@ import '../services/expense_service.dart';
 import '../services/auth_service.dart';
 import '../models/category.dart';
 import '../utils/animations.dart';
+import 'recurring_expenses_screen.dart';
 
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({super.key});
@@ -15,6 +16,16 @@ class CategoriesScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Your Categories'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.repeat),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RecurringExpensesScreen()),
+              );
+            },
+            tooltip: 'Recurring Expenses',
+          ),
           _buildUserMenu(context),
         ],
       ),
@@ -87,8 +98,7 @@ class CategoriesScreen extends StatelessWidget {
                   return SlideUpAnimation(
                     delay: Duration(milliseconds: 100 + (index * 50)),
                     child: _buildCategoryCard(
-                      category.name,
-                      category.colorHex,
+                      category,
                       spent,
                       count,
                       context,
@@ -120,13 +130,13 @@ class CategoriesScreen extends StatelessWidget {
   }
 
   Widget _buildCategoryCard(
-    String name,
-    String colorHex,
-    double totalSpent,
+    Category category,
+    double monthlySpent,
     int transactionCount,
     BuildContext context,
   ) {
-    final color = Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
+    final color = category.color;
+    final hasBudget = category.monthlyBudget != null && category.monthlyBudget! > 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -135,56 +145,117 @@ class CategoriesScreen extends StatelessWidget {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Container(
-                width: 12,
-                height: 12,
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                child: Center(
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '\$${totalSpent.toStringAsFixed(2)} • $transactionCount ${transactionCount == 1 ? 'transaction' : 'transactions'}',
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      category.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '\$${monthlySpent.toStringAsFixed(2)} • $transactionCount ${transactionCount == 1 ? 'transaction' : 'transactions'}',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
                 ),
+              ),
+              IconButton(
+                icon: Icon(
+                  hasBudget ? Icons.account_balance_wallet : Icons.add_circle_outline,
+                  size: 20,
+                ),
+                onPressed: () => _showBudgetDialog(context, category, monthlySpent),
+                tooltip: hasBudget ? 'Edit Budget' : 'Set Budget',
+                color: const Color(0xFFFFD60A),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                onPressed: () => _showEditCategoryDialog(context, category.name, category.colorHex),
+                tooltip: 'Edit',
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20),
+                onPressed: () => _showDeleteCategoryDialog(context, category.name),
+                tooltip: 'Delete',
+              ),
+            ],
+          ),
+          // Budget progress bar
+          if (hasBudget) ...[
+            const SizedBox(height: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Budget: \$${category.monthlyBudget!.toStringAsFixed(2)}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    Text(
+                      '${(monthlySpent / category.monthlyBudget! * 100).toStringAsFixed(0)}% used',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: category.isOverBudget ? Colors.red : Colors.grey,
+                        fontWeight: category.isOverBudget ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: (monthlySpent / category.monthlyBudget!).clamp(0.0, 1.0),
+                    backgroundColor: Colors.grey[800],
+                    color: category.isOverBudget
+                        ? Colors.red
+                        : (monthlySpent / category.monthlyBudget! > 0.8
+                            ? Colors.orange
+                            : Colors.green),
+                    minHeight: 8,
+                  ),
+                ),
+                if (category.isOverBudget)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Over budget by \$${(monthlySpent - category.monthlyBudget!).toStringAsFixed(2)}',
+                      style: const TextStyle(fontSize: 11, color: Colors.red),
+                    ),
+                  ),
               ],
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => _showEditCategoryDialog(context, name, colorHex),
-            tooltip: 'Edit',
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () => _showDeleteCategoryDialog(context, name),
-            tooltip: 'Delete',
-          ),
+          ],
         ],
       ),
     );
@@ -324,6 +395,91 @@ class CategoriesScreen extends StatelessWidget {
               backgroundColor: Colors.red,
             ),
             child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Budget Dialog
+  void _showBudgetDialog(BuildContext context, Category category, double currentSpent) {
+    final expenseService = ExpenseService();
+    final budgetController = TextEditingController(
+      text: category.monthlyBudget?.toStringAsFixed(2) ?? '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Set Budget for ${category.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Current month spending: \$${currentSpent.toStringAsFixed(2)}',
+              style: const TextStyle(color: Colors.grey, fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: budgetController,
+              decoration: const InputDecoration(
+                labelText: 'Monthly Budget',
+                prefixText: '\$',
+                hintText: '0.00',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Leave empty to remove budget',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final budgetText = budgetController.text.trim();
+              double? budget;
+
+              if (budgetText.isNotEmpty) {
+                budget = double.tryParse(budgetText);
+                if (budget == null || budget < 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid amount')),
+                  );
+                  return;
+                }
+              }
+
+              // Update category with new budget
+              final updatedCategory = category.copyWith(
+                monthlyBudget: budget,
+                updatedAt: DateTime.now(),
+              );
+
+              await expenseService.updateCategory(updatedCategory);
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      budget == null
+                          ? 'Budget removed'
+                          : 'Budget set to \$${budget.toStringAsFixed(2)}',
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('Save'),
           ),
         ],
       ),

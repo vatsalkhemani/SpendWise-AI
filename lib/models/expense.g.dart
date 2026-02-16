@@ -26,13 +26,17 @@ class ExpenseAdapter extends TypeAdapter<Expense> {
       date: fields[6] as DateTime,
       createdAt: fields[7] as DateTime,
       updatedAt: fields[8] as DateTime?,
+      isRecurring: fields[9] as bool,
+      recurringFrequency: fields[10] as String?,
+      recurringEndDate: fields[11] as DateTime?,
+      recurringTemplateId: fields[12] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Expense obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +54,15 @@ class ExpenseAdapter extends TypeAdapter<Expense> {
       ..writeByte(7)
       ..write(obj.createdAt)
       ..writeByte(8)
-      ..write(obj.updatedAt);
+      ..write(obj.updatedAt)
+      ..writeByte(9)
+      ..write(obj.isRecurring)
+      ..writeByte(10)
+      ..write(obj.recurringFrequency)
+      ..writeByte(11)
+      ..write(obj.recurringEndDate)
+      ..writeByte(12)
+      ..write(obj.recurringTemplateId);
   }
 
   @override

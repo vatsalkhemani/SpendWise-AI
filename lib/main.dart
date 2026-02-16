@@ -8,6 +8,7 @@ import 'screens/chat_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/categories_screen.dart';
 import 'screens/ai_chat_screen.dart';
+import 'screens/analytics_screen.dart';
 import 'screens/login_screen.dart';
 import 'services/expense_service.dart';
 import 'services/auth_service.dart';
@@ -182,6 +183,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const ChatScreen(),
     const DashboardScreen(),
+    const AnalyticsScreen(),
     const CategoriesScreen(),
     const AIChatScreen(),
   ];
@@ -211,6 +213,10 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.show_chart),
+            label: 'Analytics',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.category),

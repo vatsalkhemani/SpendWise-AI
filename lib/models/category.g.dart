@@ -24,6 +24,7 @@ class CategoryAdapter extends TypeAdapter<Category> {
       isDefault: fields[4] as bool,
       totalSpent: fields[5] as double,
       transactionCount: fields[6] as int,
+      monthlyBudget: fields[9] as double?,
       createdAt: fields[7] as DateTime?,
       updatedAt: fields[8] as DateTime?,
     );
@@ -32,7 +33,7 @@ class CategoryAdapter extends TypeAdapter<Category> {
   @override
   void write(BinaryWriter writer, Category obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +51,9 @@ class CategoryAdapter extends TypeAdapter<Category> {
       ..writeByte(7)
       ..write(obj.createdAt)
       ..writeByte(8)
-      ..write(obj.updatedAt);
+      ..write(obj.updatedAt)
+      ..writeByte(9)
+      ..write(obj.monthlyBudget);
   }
 
   @override
