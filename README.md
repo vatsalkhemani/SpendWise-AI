@@ -8,48 +8,6 @@ Built with Flutter for Web, iOS, Android, and Desktop.
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.38.9-blue)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10.8-blue)](https://dart.dev)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
----
-
-## Why SpendWise AI?
-
-Traditional expense tracking is tedious. SpendWise AI changes that by understanding natural language and automating the entire process. No forms to fill, no categories to select—just tell it what you spent and move on with your day.
-
-**Three ways to log expenses:**
-- Type naturally: "spent $25 on lunch at Chipotle"
-- Speak: Tap the microphone and say it
-- Snap: Take a photo of your receipt
-
-The AI automatically extracts the amount, categorizes the expense, and syncs it across all your devices instantly.
-
----
-
-## Core Features
-
-### Intelligent Input
-- **Natural Language Processing**: Type expenses as you would tell a friend
-- **Voice Recognition**: Speak your expenses hands-free
-- **Receipt Scanning**: Photograph receipts for automatic data extraction
-- **Smart Categorization**: AI automatically assigns categories based on context
-
-### Analytics & Insights
-- **Real-time Dashboard**: See your spending at a glance with interactive charts
-- **Trend Analysis**: Track spending patterns over 6 months
-- **Budget Tracking**: Set budgets per category with visual progress indicators
-- **AI Insights**: Get personalized spending summaries and recommendations
-
-### Data Management
-- **Edit & Delete**: Full control over your expense history
-- **Advanced Search**: Filter by category, date range, amount, or description
-- **Recurring Expenses**: Set up automatic tracking for regular bills
-- **Data Export**: Download your data as CSV or formatted reports
-
-### Sync & Collaboration
-- **Cloud Sync**: Automatic synchronization across all devices
-- **Real-time Updates**: Changes appear instantly on all your devices
-- **Offline Support**: Works without internet, syncs when reconnected
-- **User Profiles**: Google Sign-In with secure authentication
 
 ---
 
@@ -92,6 +50,47 @@ The AI automatically extracts the amount, categorizes the expense, and syncs it 
 </table>
 
 </div>
+
+---
+
+## Why SpendWise AI?
+
+Traditional expense tracking is tedious. SpendWise AI changes that by understanding natural language and automating the entire process. No forms to fill, no categories to select—just tell it what you spent and move on with your day.
+
+**Three ways to log expenses:**
+- Type naturally: "spent $25 on lunch at Chipotle"
+- Speak: Tap the microphone and say it
+- Snap: Take a photo of your receipt
+
+The AI automatically extracts the amount, categorizes the expense, and syncs it across all your devices instantly.
+
+---
+
+## Core Features
+
+### Intelligent Input
+- **Natural Language Processing**: Type expenses as you would tell a friend
+- **Voice Recognition**: Speak your expenses hands-free
+- **Receipt Scanning**: Photograph receipts for automatic data extraction
+- **Smart Categorization**: AI automatically assigns categories based on context
+
+### Analytics & Insights
+- **Real-time Dashboard**: See your spending at a glance with interactive charts
+- **Trend Analysis**: Track spending patterns over 6 months
+- **Budget Tracking**: Set budgets per category with visual progress indicators
+- **AI Insights**: Get personalized spending summaries and recommendations
+
+### Data Management
+- **Edit & Delete**: Full control over your expense history
+- **Advanced Search**: Filter by category, date range, amount, or description
+- **Recurring Expenses**: Set up automatic tracking for regular bills
+- **Data Export**: Download your data as CSV or formatted reports
+
+### Sync & Collaboration
+- **Cloud Sync**: Automatic synchronization across all devices
+- **Real-time Updates**: Changes appear instantly on all your devices
+- **Offline Support**: Works without internet, syncs when reconnected
+- **User Profiles**: Google Sign-In with secure authentication
 
 ---
 
@@ -371,7 +370,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Vatsal Khemani**
 
 - GitHub: [@vatsalkhemani](https://github.com/vatsalkhemani)
-- Email: vatsalkhemani@gmail.com
 
 ---
 
