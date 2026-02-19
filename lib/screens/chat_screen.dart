@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:intl/intl.dart';
 import '../services/azure_openai_service.dart';
 import '../services/expense_service.dart';
 import '../services/auth_service.dart';
+import '../services/ocr_service.dart';
 import '../models/expense.dart';
 import '../utils/animations.dart';
 import 'package:uuid/uuid.dart';
@@ -22,8 +27,10 @@ class _ChatScreenState extends State<ChatScreen> {
   final AzureOpenAIService _aiService = AzureOpenAIService();
   final ExpenseService _expenseService = ExpenseService();
   final stt.SpeechToText _speech = stt.SpeechToText();
+  final OcrService _ocrService = OcrService();
   bool _isProcessing = false;
   bool _isListening = false;
+  bool _isCapturing = false;
 
   @override
   void dispose() {
@@ -51,9 +58,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _buildMonthlyTotal(),
           const Divider(height: 1),
           Expanded(
-            child: _messages.isEmpty
-                ? _buildEmptyState()
-                : _buildMessageList(),
+            child: _messages.isEmpty ? _buildEmptyState() : _buildMessageList(),
           ),
           _buildInputArea(),
         ],
@@ -204,9 +209,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: isUser
-                ? const Color(0xFFFFD60A)
-                : const Color(0xFF2C2C2E),
+            color: isUser ? const Color(0xFFFFD60A) : const Color(0xFF2C2C2E),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
@@ -234,9 +237,18 @@ class _ChatScreenState extends State<ChatScreen> {
         top: false,
         child: Row(
           children: [
+            // Camera button
+            IconButton(
+              onPressed:
+                  _isProcessing || _isCapturing ? null : _startReceiptCapture,
+              icon: const Icon(Icons.camera_alt),
+              iconSize: 28,
+              color: _isCapturing ? const Color(0xFFFFD60A) : Colors.white,
+              tooltip: 'Scan receipt',
+            ),
             // Voice button
             IconButton(
-              onPressed: _startVoiceInput,
+              onPressed: _isProcessing ? null : _startVoiceInput,
               icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
               iconSize: 28,
               color: _isListening ? const Color(0xFFFFD60A) : Colors.white,
@@ -282,7 +294,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.black),
                         ),
                       )
                     : const Icon(Icons.send, color: Colors.black),
@@ -311,8 +324,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       // Get available categories for AI to use
-      final categoryNames = _expenseService.categories.map((c) => c.name).toList();
-      final parsed = await _aiService.parseExpense(text, availableCategories: categoryNames);
+      final categoryNames =
+          _expenseService.categories.map((c) => c.name).toList();
+      final parsed = await _aiService.parseExpense(text,
+          availableCategories: categoryNames);
 
       final expense = Expense(
         id: const Uuid().v4(),
@@ -334,7 +349,8 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages.add(
           ChatMessage(
-            content: '✓ Added ${expense.formattedAmount} - ${expense.description}\nCategory: ${expense.category}',
+            content:
+                '✓ Added ${expense.formattedAmount} - ${expense.description}\nCategory: ${expense.category}',
             isFromUser: false,
           ),
         );
@@ -348,7 +364,8 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages.add(
           ChatMessage(
-            content: 'Sorry, I couldn\'t process that. Try: "spent \$25 on lunch"',
+            content:
+                'Sorry, I couldn\'t process that. Try: "spent \$25 on lunch"',
             isFromUser: false,
           ),
         );
@@ -383,7 +400,8 @@ class _ChatScreenState extends State<ChatScreen> {
     bool available = await _speech.initialize(
       onError: (error) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Speech recognition error: ${error.errorMsg}')),
+          SnackBar(
+              content: Text('Speech recognition error: ${error.errorMsg}')),
         );
       },
       onStatus: (status) {
@@ -421,6 +439,387 @@ class _ChatScreenState extends State<ChatScreen> {
       cancelOnError: true,
       listenMode: stt.ListenMode.confirmation,
     );
+  }
+
+  /// Start receipt capture flow - show camera/gallery choice dialog
+  Future<void> _startReceiptCapture() async {
+    // Show source selector dialog
+    final source = await _showImageSourceDialog();
+    if (source == null) return;
+
+    // Request permissions (skip on web)
+    if (!kIsWeb) {
+      final hasPermission = await _requestPermission(source);
+      if (!hasPermission) {
+        _showPermissionError();
+        return;
+      }
+    }
+
+    // Capture/select image
+    setState(() => _isCapturing = true);
+
+    try {
+      final image = await _ocrService.captureReceiptImage(source: source);
+      setState(() => _isCapturing = false);
+
+      if (image == null) return;
+
+      // Process OCR
+      await _processReceipt(image);
+    } catch (e) {
+      setState(() => _isCapturing = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to capture image: $e')),
+        );
+      }
+    }
+  }
+
+  /// Show dialog to choose camera or gallery
+  Future<ImageSource?> _showImageSourceDialog() async {
+    return showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2C2C2E),
+        title: const Text('Select Image Source'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Color(0xFFFFD60A)),
+              title: const Text('Take Photo'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading:
+                  const Icon(Icons.photo_library, color: Color(0xFFFFD60A)),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Request camera or photo library permission
+  Future<bool> _requestPermission(ImageSource source) async {
+    final permission =
+        source == ImageSource.camera ? Permission.camera : Permission.photos;
+
+    final status = await permission.request();
+    return status.isGranted;
+  }
+
+  /// Show permission error with settings link
+  void _showPermissionError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Permission required to access camera/photos'),
+        action: SnackBarAction(
+          label: 'Settings',
+          onPressed: () => openAppSettings(),
+        ),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  /// Process receipt image: OCR → AI parsing → Review dialog
+  Future<void> _processReceipt(XFile image) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Color(0xFFFFD60A)),
+            SizedBox(height: 16),
+            Text(
+              'Reading receipt...',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Step 1: Extract text via Azure Computer Vision
+      final receiptText = await _ocrService.extractTextFromImage(image);
+
+      // Step 2: Parse text into structured data via Azure OpenAI
+      final categoryNames =
+          _expenseService.categories.map((c) => c.name).toList();
+      final parsed =
+          await _aiService.parseReceiptText(receiptText, categoryNames);
+
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Step 3: Show review dialog
+      await _showReceiptReviewDialog(parsed);
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Show error
+      _showErrorDialog('Could not read receipt', e.toString());
+    }
+  }
+
+  /// Show error dialog
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2C2C2E),
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show receipt review dialog with editable fields
+  Future<void> _showReceiptReviewDialog(
+      Map<String, dynamic> extractedData) async {
+    final amountController = TextEditingController(
+      text: extractedData['amount']?.toString() ?? '',
+    );
+    final descController = TextEditingController(
+      text: extractedData['description'] ?? '',
+    );
+    final personController = TextEditingController(
+      text: extractedData['person'] ?? '',
+    );
+
+    String selectedCategory =
+        extractedData['category'] ?? _expenseService.categories.first.name;
+    DateTime selectedDate = extractedData['date'] != null
+        ? DateTime.parse(extractedData['date'])
+        : DateTime.now();
+
+    return showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF2C2C2E),
+          title: const Text('Review Receipt'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Amount field
+                TextField(
+                  controller: amountController,
+                  decoration: const InputDecoration(
+                    labelText: 'Amount',
+                    labelStyle: TextStyle(color: Colors.grey),
+                    prefixText: '\$',
+                    prefixStyle: TextStyle(color: Colors.white),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFFFD60A)),
+                    ),
+                  ),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+
+                // Description field
+                TextField(
+                  controller: descController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    labelStyle: TextStyle(color: Colors.grey),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFFFD60A)),
+                    ),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+
+                // Category dropdown
+                DropdownButtonFormField<String>(
+                  value: selectedCategory,
+                  dropdownColor: const Color(0xFF2C2C2E),
+                  items: _expenseService.categories
+                      .map((c) => DropdownMenuItem(
+                            value: c.name,
+                            child: Text(c.name),
+                          ))
+                      .toList(),
+                  onChanged: (val) =>
+                      setDialogState(() => selectedCategory = val!),
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    labelStyle: TextStyle(color: Colors.grey),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFFFD60A)),
+                    ),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+
+                // Person field (optional)
+                TextField(
+                  controller: personController,
+                  decoration: const InputDecoration(
+                    labelText: 'Person (optional)',
+                    labelStyle: TextStyle(color: Colors.grey),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFFFD60A)),
+                    ),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+
+                // Date picker
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text(
+                    'Date',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  subtitle: Text(
+                    DateFormat.yMMMd().format(selectedDate),
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                  trailing: const Icon(Icons.calendar_today,
+                      color: Color(0xFFFFD60A)),
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                      builder: (context, child) {
+                        return Theme(
+                          data: ThemeData.dark().copyWith(
+                            colorScheme: const ColorScheme.dark(
+                              primary: Color(0xFFFFD60A),
+                              surface: Color(0xFF2C2C2E),
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (date != null) {
+                      setDialogState(() => selectedDate = date);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Validate amount
+                final amount = double.tryParse(amountController.text);
+                if (amount == null || amount <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Please enter a valid amount')),
+                  );
+                  return;
+                }
+
+                // Create expense
+                _createExpenseFromReceipt(
+                  amount: amount,
+                  description: descController.text.trim(),
+                  category: selectedCategory,
+                  person: personController.text.trim().isEmpty
+                      ? null
+                      : personController.text.trim(),
+                  date: selectedDate,
+                );
+
+                Navigator.of(dialogContext).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD60A),
+                foregroundColor: Colors.black,
+              ),
+              child: const Text('Add Expense'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Create expense from receipt data (after user review)
+  Future<void> _createExpenseFromReceipt({
+    required double amount,
+    required String description,
+    required String category,
+    String? person,
+    required DateTime date,
+  }) async {
+    final expense = Expense(
+      id: const Uuid().v4(),
+      userId: AuthService().userId ?? 'anonymous',
+      amount: amount,
+      category: category,
+      description: description,
+      person: person,
+      date: date,
+      createdAt: DateTime.now(),
+    );
+
+    _expenseService.addExpense(expense);
+
+    // Show success message
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _messages.add(ChatMessage(
+        content: '✓ Added ${expense.formattedAmount} from receipt\n'
+            '${expense.description}\n'
+            'Category: $category',
+        isFromUser: false,
+      ));
+    });
+
+    _scrollToBottom();
   }
 }
 

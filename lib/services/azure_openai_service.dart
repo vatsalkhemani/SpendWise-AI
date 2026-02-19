@@ -19,6 +19,32 @@ class AzureOpenAIService {
     }
   }
 
+  /// Parse OCR text from receipt into structured expense data
+  ///
+  /// Takes raw text extracted from receipt image and converts it to:
+  /// - amount: total amount from receipt
+  /// - category: best matching category
+  /// - description: merchant name
+  /// - person: null (receipts typically don't have person info)
+  /// - date: date from receipt if available
+  Future<Map<String, dynamic>> parseReceiptText(
+    String receiptText,
+    List<String> availableCategories,
+  ) async {
+    try {
+      final prompt = _buildReceiptParsePrompt(receiptText, availableCategories);
+      final response = await _sendRequest(prompt);
+
+      // Parse JSON response from AI
+      final content = response['choices'][0]['message']['content'] as String;
+      final cleanedJson = _cleanJsonResponse(content);
+      return jsonDecode(cleanedJson) as Map<String, dynamic>;
+    } catch (e) {
+      print('Error parsing receipt: $e');
+      rethrow;
+    }
+  }
+
   /// Clean JSON response by removing markdown code blocks
   String _cleanJsonResponse(String response) {
     String cleaned = response.trim();
@@ -148,6 +174,41 @@ Rules:
 - Person is optional (null if not mentioned)
 - Date is optional (null for today)
 - Return ONLY the JSON, no other text
+''';
+  }
+
+  /// Build receipt parsing prompt (specialized for OCR text from receipts)
+  String _buildReceiptParsePrompt(String receiptText, List<String> availableCategories) {
+    final categoryList = availableCategories.map((cat) => '- $cat').join('\n');
+
+    return '''
+You are a receipt parser. Extract expense information from OCR text of a receipt.
+
+Receipt text:
+"""
+$receiptText
+"""
+
+Valid categories:
+$categoryList
+
+Extract and return ONLY valid JSON in this exact format:
+{
+  "amount": <total amount as number>,
+  "category": "<best matching category from valid list>",
+  "description": "<merchant name or brief description>",
+  "person": null,
+  "date": "<ISO date from receipt or null>"
+}
+
+Rules:
+- Use TOTAL amount (not subtotal, tax, or individual items)
+- If multiple items, look for "TOTAL", "AMOUNT DUE", or similar
+- Description should be merchant name (e.g., "Walmart", "Starbucks", "Shell Gas")
+- Category must exactly match one from the valid list above
+- For date, look for transaction date on receipt (format: YYYY-MM-DD)
+- If amount is unclear, look for largest number on receipt
+- Return ONLY valid JSON, no markdown, no other text
 ''';
   }
 

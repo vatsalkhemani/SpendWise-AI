@@ -38,6 +38,11 @@ dependencies:
   cloud_firestore: ^5.5.0
   shared_preferences: ^2.2.2  # For migration flag
 
+  # Camera & OCR (Phase 5)
+  image_picker: ^1.0.7  # Camera/gallery access
+  image: ^4.1.7         # Image processing (resize, compress)
+  permission_handler: ^11.3.0  # iOS/Android permissions
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
