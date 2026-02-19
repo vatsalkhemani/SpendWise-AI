@@ -506,7 +506,7 @@ final insights = await aiService.getInsights(
 5. ✅ **Dynamic Categorization** - AI uses user's actual categories
 6. ✅ **Smooth Animations** - Fade-in, slide-up, and staggered animations
 
-See [PHASE1_COMPLETE.md](PHASE1_COMPLETE.md) for full details.
+See [PHASE1_COMPLETE.md](docs/PHASE1_COMPLETE.md) for full details.
 
 ### Phase 2: Firebase Authentication (Feb 13, 2026)
 1. ✅ **Google Sign-In** - Firebase Auth integration
@@ -521,7 +521,7 @@ See [PHASE1_COMPLETE.md](PHASE1_COMPLETE.md) for full details.
 4. ✅ **Auto-Migration** - Hive → Firestore one-time transfer
 5. ✅ **Sync Indicator** - Cloud icon in Dashboard AppBar
 
-See [FIRESTORE_SYNC_IMPLEMENTATION.md](FIRESTORE_SYNC_IMPLEMENTATION.md) and [PHASE3_QUICK_START.md](PHASE3_QUICK_START.md) for technical details.
+See [FIRESTORE_SYNC_IMPLEMENTATION.md](docs/FIRESTORE_SYNC_IMPLEMENTATION.md) and [PHASE3_QUICK_START.md](docs/PHASE3_QUICK_START.md) for technical details.
 
 ### Phase 4: Advanced Features (Feb 16, 2026)
 1. ✅ **Expense Editing/Deletion** - Full CRUD with dialogs
@@ -532,7 +532,7 @@ See [FIRESTORE_SYNC_IMPLEMENTATION.md](FIRESTORE_SYNC_IMPLEMENTATION.md) and [PH
 6. ✅ **Data Export** - CSV and text report export
 7. ✅ **Recurring Expenses** - Daily/weekly/monthly/yearly schedules
 
-See [PHASE4_COMPLETE.md](PHASE4_COMPLETE.md) for full details.
+See [PHASE4_COMPLETE.md](docs/PHASE4_COMPLETE.md) for full details.
 
 ### Phase 5A: Mobile Optimization - Camera OCR (Feb 19, 2026)
 1. ✅ **Camera Receipt Scanning** - Camera/gallery image capture with permissions
@@ -545,13 +545,13 @@ See [PHASE4_COMPLETE.md](PHASE4_COMPLETE.md) for full details.
 
 Technical implementation: OcrService (~200 lines), parseReceiptText() in AzureOpenAIService, review dialog in ChatScreen.
 
-**Next:** See [MASTER_ROADMAP.md](MASTER_ROADMAP.md) for Phase 5B (Collaborative Features, Receipt Image Storage)
+**Next:** See [MASTER_ROADMAP.md](docs/MASTER_ROADMAP.md) for Phase 5B (Collaborative Features, Receipt Image Storage)
 
 ---
 
 ## When Adding New Features
 
-1. Check [MASTER_ROADMAP.md](MASTER_ROADMAP.md) for planned specifications
+1. Check [MASTER_ROADMAP.md](docs/MASTER_ROADMAP.md) for planned specifications
 2. Update this file (CLAUDE.md) if making architectural changes
 3. Follow existing patterns in screens/ and services/
 4. Keep AI prompts in `azure_openai_service.dart` well-structured
@@ -629,7 +629,7 @@ Technical implementation: OcrService (~200 lines), parseReceiptText() in AzureOp
 - **Flutter Docs:** https://docs.flutter.dev
 - **Dart Language:** https://dart.dev
 - **Azure OpenAI:** https://azure.microsoft.com/products/ai-services/openai-service
-- **Roadmap:** [MASTER_ROADMAP.md](MASTER_ROADMAP.md)
+- **Roadmap:** [MASTER_ROADMAP.md](docs/MASTER_ROADMAP.md)
 - **Original Design:** [DESIGN.md](DESIGN.md) (needs Flutter update)
 
 ---
