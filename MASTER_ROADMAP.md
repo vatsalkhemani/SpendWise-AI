@@ -1,7 +1,7 @@
 # SpendWise AI - Master Roadmap
 
-**Last Updated:** February 16, 2026
-**Status:** ✅ Phases 1, 2, 3, 4 COMPLETE - Production Ready!
+**Last Updated:** February 19, 2026
+**Status:** ✅ Phases 1, 2, 3, 4, 5A COMPLETE - Production Ready with Camera OCR!
 
 ---
 
@@ -46,24 +46,39 @@
 - ✅ Recurring expenses (daily, weekly, monthly, yearly schedules)
 - ✅ All features sync to Firestore in real-time
 
+**Phase 5A: Mobile Optimization - Camera OCR** ✅ COMPLETE (Feb 19, 2026)
+- ✅ Camera button in chat screen (left of microphone)
+- ✅ Source selection dialog: "Take Photo" or "Choose from Gallery"
+- ✅ OcrService with Azure Computer Vision API integration (~200 lines)
+- ✅ Smart image compression (<4MB for Azure API limits)
+- ✅ AI receipt parsing with parseReceiptText() method
+- ✅ Review & edit dialog with pre-filled fields
+- ✅ Cross-platform support (Web: gallery, Mobile: camera+gallery)
+- ✅ Permission handling for iOS/Android
+- ✅ Dependencies: image_picker, image, permission_handler
+- ✅ Platform permissions configured (iOS Info.plist, Android Manifest)
+- ✅ Config updated with Azure Vision API credentials
+- ✅ **Complete "3 Input Methods": Type, Speak, Snap! 📝🎤📸**
+
+See [PHASE5A_COMPLETE.md](PHASE5A_COMPLETE.md) for full technical details.
+
 ---
 
-## 🔮 Future Phases (Phase 5+)
+## 🔮 Future Phases (Phase 5B+)
 
-### Phase 5: Collaborative & Mobile Features
-
-### Phase 5: Collaborative Features
+### Phase 5B: Collaborative Features
 - Share expenses with family/friends
 - Split bills (equal or custom)
 - Group expense tracking
 - Shared categories and budgets
+- Collaborative budgets
 
-### Phase 6: Mobile Optimization
-- Native mobile app polish
-- Receipt camera scanning
-- OCR for receipt parsing
-- Push notifications
+### Phase 6: Advanced Mobile Features
+- Receipt image storage (attach photos to expenses)
+- Push notifications for budget alerts
 - Offline mode improvements
+- Native mobile app optimization
+- Multi-receipt batch processing
 
 ### Phase 7: Enterprise Features
 - Multi-currency support
@@ -117,19 +132,29 @@
    - Microphone button (turns yellow when listening)
    - Accurate speech recognition
 
-6. **Data Persistence**
+6. **Camera OCR (NEW - Phase 5A)** 📸
+   - Receipt scanning with camera or gallery
+   - Azure Computer Vision API integration
+   - AI receipt parsing (amount, merchant, category, date)
+   - Review & edit dialog before saving
+   - Cross-platform support (Web: gallery, Mobile: camera+gallery)
+   - Smart image compression (<4MB)
+   - Permission handling for iOS/Android
+   - **Complete "3 Input Methods": Type 📝, Speak 🎤, Snap 📸**
+
+7. **Data Persistence**
    - Hive local storage (instant)
    - Firestore cloud sync (background)
    - Offline-first architecture
    - Real-time multi-device sync (1-3s)
 
-7. **Authentication**
+8. **Authentication**
    - Google Sign-In
    - User profiles
    - User-specific data isolation
    - Secure Firebase Auth
 
-8. **Animations**
+9. **Animations**
    - Fade-in, slide-up, scale animations
    - Staggered list animations
    - Smooth page transitions
@@ -144,6 +169,7 @@
 - **Feb 13, 2026:** Phase 2 Complete (Firebase Authentication)
 - **Feb 14, 2026:** Phase 3 Complete (Cloud Sync with Firestore)
 - **Feb 16, 2026:** Phase 4 Complete (Advanced Features - editing, analytics, budgets, recurring, export)
+- **Feb 19, 2026:** Phase 5A Complete (Camera OCR - Receipt scanning with Azure Computer Vision)
 
 ---
 
@@ -153,11 +179,15 @@
 ```
 Frontend: Flutter 3.38.9 + Dart 3.10.8
 AI: Azure OpenAI (GPT-4o, API version 2024-12-01-preview)
+OCR: Azure Computer Vision API (Read API v3.2)
 Local Storage: Hive 2.2.3 (IndexedDB for web)
 Cloud Storage: Cloud Firestore 5.5.0
 Authentication: Firebase Auth (Google Sign-In)
 Charts: fl_chart 0.66.0
 Voice: speech_to_text 6.6.0
+Camera: image_picker 1.0.7
+Image Processing: image 4.1.7
+Permissions: permission_handler 11.3.0
 ```
 
 ### Data Flow

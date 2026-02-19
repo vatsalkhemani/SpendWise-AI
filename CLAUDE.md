@@ -8,8 +8,8 @@ SpendWise AI is an **AI-powered expense tracking app** built with **Flutter** th
 
 **Platform:** Flutter (cross-platform: Web, iOS, Android, Desktop)
 **Architecture:** MVVM pattern (Models, Services, Screens)
-**AI Provider:** Azure OpenAI API
-**Current Status:** ✅ Phases 1, 2, 3, 4 COMPLETE - Full-featured production app with editing, analytics, budgets, recurring, and export
+**AI Provider:** Azure OpenAI API + Azure Computer Vision API
+**Current Status:** ✅ Phases 1, 2, 3, 4, 5A COMPLETE - Full-featured production app with editing, analytics, budgets, recurring, export, and camera OCR
 
 ---
 
@@ -261,13 +261,52 @@ flutter clean
 - ✅ Expense model updated with 4 recurring fields
 - ✅ Auto-processing on app init
 
-### ⚠️ What's NOT Yet Implemented (Phase 5+ Features)
+### ✅ Phase 5A: Mobile Optimization - Camera OCR (COMPLETE - Feb 19, 2026)
+
+**5a. Camera Receipt Scanning** (`lib/screens/chat_screen.dart`)
+- ✅ Camera button in chat input area (left of microphone)
+- ✅ Source selection dialog: "Take Photo" or "Choose from Gallery"
+- ✅ Camera/photo permissions handling (iOS/Android)
+- ✅ Permission error with settings link
+- ✅ Cross-platform support (Web: gallery only, Mobile: camera + gallery)
+
+**5b. OCR Service** (`lib/services/ocr_service.dart` - NEW ~200 lines)
+- ✅ Image capture via image_picker
+- ✅ Smart image compression (<4MB for Azure API)
+- ✅ Azure Computer Vision API integration (Read API v3.2)
+- ✅ Two-step OCR: Submit image → Poll for results
+- ✅ Text extraction from OCR response
+- ✅ Error handling (no text, poor quality, network errors)
+
+**5c. AI Receipt Parsing** (`lib/services/azure_openai_service.dart`)
+- ✅ New method: `parseReceiptText()` (~80 lines)
+- ✅ Receipt-specific prompt engineering
+- ✅ Extracts: amount (total), merchant name, category, date
+- ✅ Handles itemized receipts, tax, subtotals
+- ✅ Reuses existing HTTP request infrastructure
+
+**5d. Review & Edit Dialog** (`lib/screens/chat_screen.dart`)
+- ✅ Shows extracted data in editable form
+- ✅ Amount field (TextField, validated)
+- ✅ Description field (TextField)
+- ✅ Category dropdown (user's categories)
+- ✅ Person field (optional)
+- ✅ Date picker with theme
+- ✅ "Add Expense" button creates expense (Hive + Firestore)
+
+**5e. Platform Configuration**
+- ✅ iOS permissions: NSCameraUsageDescription, NSPhotoLibraryUsageDescription
+- ✅ Android permissions: CAMERA, READ_EXTERNAL_STORAGE
+- ✅ Dependencies: image_picker ^1.0.7, image ^4.1.7, permission_handler ^11.3.0
+- ✅ Config.dart: azureVisionEndpoint, azureVisionApiKey
+
+### ⚠️ What's NOT Yet Implemented (Phase 5B+ Features)
 
 1. **Collaborative Features** - ❌ No shared expenses or bill splitting
-2. **Mobile Optimization** - ❌ Receipt camera scanning, OCR
+2. **Receipt Image Storage** - ❌ Only text data saved (no image attachments)
 3. **Multi-Currency** - ❌ Only supports single currency (USD)
 4. **Tax Features** - ❌ No tax categorization or reporting
-5. **Receipt Attachments** - ❌ Cannot attach photos/files to expenses
+5. **Business Expense Tracking** - ❌ No mileage or advanced tax features
 
 ---
 
@@ -495,7 +534,18 @@ See [FIRESTORE_SYNC_IMPLEMENTATION.md](FIRESTORE_SYNC_IMPLEMENTATION.md) and [PH
 
 See [PHASE4_COMPLETE.md](PHASE4_COMPLETE.md) for full details.
 
-**Next:** See [MASTER_ROADMAP.md](MASTER_ROADMAP.md) for Phase 5 (Collaborative Features, Mobile Optimization)
+### Phase 5A: Mobile Optimization - Camera OCR (Feb 19, 2026)
+1. ✅ **Camera Receipt Scanning** - Camera/gallery image capture with permissions
+2. ✅ **OCR Integration** - Azure Computer Vision API (Read API v3.2)
+3. ✅ **AI Receipt Parsing** - Extract amount, merchant, category, date from OCR text
+4. ✅ **Review Dialog** - Editable fields before saving expense
+5. ✅ **Cross-Platform** - Web (gallery), Android/iOS (camera + gallery)
+6. ✅ **New Dependencies** - image_picker, image, permission_handler
+7. ✅ **Platform Permissions** - iOS (Info.plist) and Android (AndroidManifest.xml)
+
+Technical implementation: OcrService (~200 lines), parseReceiptText() in AzureOpenAIService, review dialog in ChatScreen.
+
+**Next:** See [MASTER_ROADMAP.md](MASTER_ROADMAP.md) for Phase 5B (Collaborative Features, Receipt Image Storage)
 
 ---
 
@@ -586,4 +636,4 @@ See [PHASE4_COMPLETE.md](PHASE4_COMPLETE.md) for full details.
 
 **Remember:** This is a Flutter app, not iOS/SwiftUI. All documentation should reflect Dart/Flutter implementations, not Swift code.
 
-*Last Updated: February 16, 2026*
+*Last Updated: February 19, 2026 - Phase 5A Complete (Camera OCR)*
