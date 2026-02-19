@@ -25,20 +25,39 @@ SpendWise AI is your intelligent expense tracking companion. Simply tell it what
 
 <div align="center">
 
-### Chat Screen - Natural Language & Voice Input
-<img src="lib/Images/image (3).jpg" width="800" alt="Chat Screen">
-
-### Dashboard - Live Analytics & Spending Overview
-<img src="lib/Images/image (4).jpg" width="800" alt="Dashboard">
-
-### Categories - Budget Tracking & Management
-<img src="lib/Images/image (5).jpg" width="800" alt="Categories">
-
-### Analytics - 6-Month Trends & AI Insights
-<img src="lib/Images/image (6).jpg" width="800" alt="Analytics">
-
-### All Expenses - Search & Advanced Filters
-<img src="lib/Images/image (8).png" width="800" alt="All Expenses">
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="lib/Images/image (3).jpg" width="100%" alt="Chat Screen"><br>
+      <b>Chat Screen</b><br>
+      Natural Language & Voice Input
+    </td>
+    <td align="center" width="50%">
+      <img src="lib/Images/image (4).jpg" width="100%" alt="Dashboard"><br>
+      <b>Dashboard</b><br>
+      Live Analytics & Spending Overview
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="lib/Images/image (5).jpg" width="100%" alt="Categories"><br>
+      <b>Categories</b><br>
+      Budget Tracking & Management
+    </td>
+    <td align="center" width="50%">
+      <img src="lib/Images/image (6).jpg" width="100%" alt="Analytics"><br>
+      <b>Analytics</b><br>
+      6-Month Trends & AI Insights
+    </td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2">
+      <img src="lib/Images/image (8).png" width="50%" alt="All Expenses"><br>
+      <b>All Expenses</b><br>
+      Search & Advanced Filters
+    </td>
+  </tr>
+</table>
 
 </div>
 
